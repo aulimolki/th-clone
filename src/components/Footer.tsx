@@ -27,7 +27,7 @@ export default function Footer({ onNavigate }: Props) {
                 Get 10% off your first order
               </h2>
               <p className="text-white/60">
-                Join the Threadheads crew for exclusive drops, offers and chaos.
+                Join the Cool Clothing Company crew for exclusive drops, offers and deals.
               </p>
             </div>
             <form onSubmit={handleSubscribe} className="flex gap-3">
@@ -58,12 +58,16 @@ export default function Footer({ onNavigate }: Props) {
           <div className="col-span-2">
             <button
               onClick={() => onNavigate('#/')}
-              className="font-black text-3xl tracking-tighter mb-4 block"
+              className="mb-4 block"
             >
-              thread<span className="font-light">heads</span>
+              <img
+                src="/27508dc2-94dc-4575-adeb-050fb25d2db9 copy.jpeg"
+                alt="Cool Clothing Company"
+                className="h-14 w-auto object-contain invert"
+              />
             </button>
             <p className="text-white/60 text-sm mb-4 max-w-xs">
-              Chaotic clothing since 2018. In-house design team. Worldwide shipping.
+              Cool clothing since 2018. In-house design team. Worldwide shipping.
               Really good website.
             </p>
             <div className="flex gap-3">
@@ -183,7 +187,7 @@ export default function Footer({ onNavigate }: Props) {
         <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-white/40">
-              (c) {new Date().getFullYear()} Threadheads. All rights reserved.
+              (c) {new Date().getFullYear()} Cool Clothing Company. All rights reserved.
             </p>
             <div className="flex gap-6 text-xs text-white/40">
               <button className="hover:text-white transition-colors">Privacy Policy</button>

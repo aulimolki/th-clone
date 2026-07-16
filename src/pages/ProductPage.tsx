@@ -292,7 +292,7 @@ export default function ProductPage({ slug, onNavigate }: Props) {
                   Product Details
                 </summary>
                 <ul className="text-sm text-gray-600 space-y-1 mt-2 ml-1">
-                  <li>Designed by Threadheads</li>
+                  <li>Designed by Cool Clothing Company</li>
                   <li>100% combed cotton</li>
                   <li>Heavyweight 275gsm fabric</li>
                   <li>90s-inspired boxy fit with dropped shoulders</li>

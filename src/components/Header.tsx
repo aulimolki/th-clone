@@ -137,10 +137,10 @@ export default function Header({ onNavigate }: { onNavigate: (path: string) => v
       <div className="bg-black text-white text-center py-2.5 px-4 text-xs font-medium tracking-wide relative overflow-hidden">
         <div className="animate-marquee whitespace-nowrap inline-block">
           <span className="mx-8">FREE US SHIPPING OVER $90</span>
-          <span className="mx-8">20% OFF WITH CODE 1776 — JULY 4TH SALE ENDS SOON</span>
+          <span className="mx-8">20% OFF WITH CODE COOL — LIMITED TIME SALE ENDS SOON</span>
           <span className="mx-8">MADE TO ORDER IN 2-3 BUSINESS DAYS</span>
           <span className="mx-8">FREE US SHIPPING OVER $90</span>
-          <span className="mx-8">20% OFF WITH CODE 1776 — JULY 4TH SALE ENDS SOON</span>
+          <span className="mx-8">20% OFF WITH CODE COOL — LIMITED TIME SALE ENDS SOON</span>
           <span className="mx-8">MADE TO ORDER IN 2-3 BUSINESS DAYS</span>
         </div>
       </div>
@@ -166,11 +166,13 @@ export default function Header({ onNavigate }: { onNavigate: (path: string) => v
             {/* Logo */}
             <button
               onClick={() => navigate('#/')}
-              className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 font-black text-2xl lg:text-3xl tracking-tighter"
+              className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
             >
-              <span className="inline-flex items-baseline">
-                thread<span className="font-light">heads</span>
-              </span>
+              <img
+                src="/27508dc2-94dc-4575-adeb-050fb25d2db9 copy.jpeg"
+                alt="Cool Clothing Company"
+                className="h-10 lg:h-12 w-auto object-contain"
+              />
             </button>
 
             {/* Desktop nav */}
@@ -290,7 +292,7 @@ export default function Header({ onNavigate }: { onNavigate: (path: string) => v
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-[85%] max-w-sm bg-white overflow-y-auto animate-slideInLeft">
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <span className="font-black text-xl tracking-tighter">thread<span className="font-light">heads</span></span>
+              <img src="/27508dc2-94dc-4575-adeb-050fb25d2db9 copy.jpeg" alt="Cool Clothing Company" className="h-8 w-auto object-contain" />
               <button onClick={() => setMobileOpen(false)} className="p-2">
                 <X size={22} />
               </button>

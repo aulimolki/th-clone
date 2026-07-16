@@ -37,13 +37,13 @@ export default function HomePage({ onNavigate }: Props) {
       <section className="relative h-[70vh] min-h-[500px] bg-black overflow-hidden">
         <img
           src="https://images.pexels.com/photos/2703202/pexels-photo-2703202.jpeg"
-          alt="Threadheads"
+          alt="Cool Clothing Company"
           className="w-full h-full object-cover opacity-70"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
           <p className="text-xs font-bold uppercase tracking-[0.3em] mb-4 opacity-80">
-            Since 2018 — Designed in Melbourne
+            Since 2018 — Cool Clothing Company
           </p>
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6">
             Chaotic clothing
@@ -79,7 +79,7 @@ export default function HomePage({ onNavigate }: Props) {
               { icon: Truck, title: 'Free Shipping', sub: 'On US orders over $90' },
               { icon: Shirt, title: 'Premium Cotton', sub: '275gsm heavyweight combed cotton' },
               { icon: Globe, title: 'Worldwide Delivery', sub: 'Printed in AU, US & EU' },
-              { icon: Star, title: '700K+ Customers', sub: 'Rated Excellent on Trustpilot' },
+              { icon: Star, title: '700K+ Customers', sub: 'Rated Excellent on Reviews' },
             ].map((badge) => (
               <div key={badge.title} className="flex items-center gap-3">
                 <badge.icon size={28} strokeWidth={1.5} />
@@ -251,14 +251,14 @@ export default function HomePage({ onNavigate }: Props) {
             </div>
             <p className="text-2xl font-bold">4.6 / 5 — Excellent</p>
             <p className="text-sm text-gray-500 mt-1">
-              Based on 760+ reviews on Trustpilot
+              Based on 760+ verified reviews
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 name: 'Sarah M.',
-                review: 'The quality is unreal. The oversized fit is perfect and the print is so crisp. Have ordered 5 times now.',
+                review: 'The quality is unreal. The oversized fit is perfect and the print is so crisp. Have ordered 5 times now from Cool Clothing Company.',
                 location: 'Melbourne, AU',
               },
               {
