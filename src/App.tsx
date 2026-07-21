@@ -6,11 +6,13 @@ import CartDrawer from './components/CartDrawer';
 import HomePage from './pages/HomePage';
 import CollectionPage from './pages/CollectionPage';
 import ProductPage from './pages/ProductPage';
+import CustomizePage from './pages/CustomizePage';
 
 type Route =
   | { name: 'home' }
   | { name: 'collection'; slug?: string }
   | { name: 'product'; slug: string }
+  | { name: 'customize'; slug: string }
   | { name: 'search'; query: string }
   | { name: 'new' };
 
@@ -19,6 +21,8 @@ function parseHash(): Route {
   if (hash === '/' || hash === '') return { name: 'home' };
   const productMatch = hash.match(/^\/product\/(.+)$/);
   if (productMatch) return { name: 'product', slug: productMatch[1] };
+  const customizeMatch = hash.match(/^\/customize\/(.+)$/);
+  if (customizeMatch) return { name: 'customize', slug: customizeMatch[1] };
   const collectionMatch = hash.match(/^\/collections\/(.+)$/);
   if (collectionMatch) return { name: 'collection', slug: collectionMatch[1] };
   const collectionAll = hash.match(/^\/collections$/);
@@ -56,6 +60,9 @@ export default function App() {
           )}
           {route.name === 'product' && (
             <ProductPage slug={route.slug} onNavigate={navigate} />
+          )}
+          {route.name === 'customize' && (
+            <CustomizePage slug={route.slug} onNavigate={navigate} />
           )}
           {route.name === 'new' && (
             <CollectionPage onNavigate={navigate} />

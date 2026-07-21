@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  Star, ShoppingBag, Truck, RefreshCw, Globe, ChevronRight,
-  Minus, Plus, Check,
-} from 'lucide-react';
+import { Star, Truck, RefreshCw, Globe, ChevronRight, Sparkles } from 'lucide-react';
 import { supabase, type Product, type PrintType } from '../supabase';
-import { useCart } from '../cart';
 import ProductCard from '../components/ProductCard';
 
 type Props = {
@@ -12,24 +8,29 @@ type Props = {
   onNavigate: (path: string) => void;
 };
 
+const TEE_COLORS = [
+  { name: 'White', hex: '#ffffff' },
+  { name: 'Black', hex: '#111111' },
+  { name: 'Navy', hex: '#1e2a4a' },
+  { name: 'Gray', hex: '#9ca3af' },
+  { name: 'Red', hex: '#c8312b' },
+  { name: 'Blue', hex: '#2563eb' },
+  { name: 'Green', hex: '#1f8a4c' },
+];
+
 export default function ProductPage({ slug, onNavigate }: Props) {
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const [sizeError, setSizeError] = useState(false);
-  const [added, setAdded] = useState(false);
   const [printType, setPrintType] = useState<PrintType>('DTG');
-  const { addToCart } = useCart();
+  const [color, setColor] = useState('White');
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       setActiveImage(0);
-      setSelectedSize(null);
-      setQuantity(1);
+      setColor('White');
       const { data } = await supabase
         .from('products')
         .select('*, category:categories(*)')
@@ -50,16 +51,8 @@ export default function ProductPage({ slug, onNavigate }: Props) {
     })();
   }, [slug]);
 
-  const handleAddToCart = async () => {
-    if (!product) return;
-    if (!selectedSize) {
-      setSizeError(true);
-      return;
-    }
-    setSizeError(false);
-    await addToCart(product, selectedSize, quantity, printType);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 3000);
+  const handleCustomize = () => {
+    onNavigate(`#/customize/${slug}`);
   };
 
   if (loading) {
@@ -207,7 +200,7 @@ export default function ProductPage({ slug, onNavigate }: Props) {
                       printType === pt
                         ? 'border-black bg-black text-white'
                         : 'border-gray-200 hover:border-black'
-                  }`}
+                    }`}
                   >
                     <div className="font-bold">{pt}</div>
                     <div className="text-[10px] font-normal opacity-80 mt-0.5">
@@ -223,83 +216,34 @@ export default function ProductPage({ slug, onNavigate }: Props) {
               </p>
             </div>
 
-            {/* Size selector */}
+            {/* Color selector */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold uppercase tracking-wide">
-                  Select Size
-                </span>
-                <button className="text-xs underline text-gray-500">
-                  Size Guide
-                </button>
-              </div>
-              {sizeError && (
-                <p className="text-xs text-red-600 mb-2">Please select a size</p>
-              )}
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                {product.sizes?.map((size) => (
+              <span className="text-sm font-bold uppercase tracking-wide mb-3 block">
+                Color — <span className="font-normal normal-case">{color}</span>
+              </span>
+              <div className="flex flex-wrap gap-3">
+                {TEE_COLORS.map((c) => (
                   <button
-                    key={size}
-                    onClick={() => {
-                      setSelectedSize(size);
-                      setSizeError(false);
-                    }}
-                    className={`py-3 text-sm font-medium border transition-all ${
-                      selectedSize === size
-                        ? 'border-black bg-black text-white'
-                        : 'border-gray-200 hover:border-black'
+                    key={c.name}
+                    onClick={() => setColor(c.name)}
+                    title={c.name}
+                    className={`w-10 h-10 rounded-full border-2 transition-all ${
+                      color === c.name
+                        ? 'border-black ring-2 ring-black ring-offset-2'
+                        : 'border-gray-200 hover:border-gray-400'
                     }`}
-                  >
-                    {size}
-                  </button>
+                    style={{ backgroundColor: c.hex }}
+                  />
                 ))}
               </div>
             </div>
 
-            {/* Quantity */}
-            <div className="mb-6">
-              <span className="text-sm font-bold uppercase tracking-wide mb-2 block">
-                Quantity
-              </span>
-              <div className="flex items-center border border-gray-200 w-fit">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-3 hover:bg-gray-50"
-                >
-                  <Minus size={16} />
-                </button>
-                <span className="px-6 text-sm font-medium">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="p-3 hover:bg-gray-50"
-                >
-                  <Plus size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Add to cart */}
+            {/* Customize button */}
             <button
-              onClick={handleAddToCart}
-              className={`w-full py-4 text-sm font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2 mb-3 ${
-                added
-                  ? 'bg-green-600 text-white'
-                  : 'bg-black text-white hover:bg-gray-800'
-              }`}
+              onClick={handleCustomize}
+              className="w-full py-4 text-sm font-bold uppercase tracking-wide bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-3"
             >
-              {added ? (
-                <>
-                  <Check size={18} /> Added to Cart
-                </>
-              ) : (
-                <>
-                  <ShoppingBag size={18} /> Add to Cart — $
-                  {(product.price * quantity).toFixed(2)}
-                </>
-              )}
-            </button>
-            <button className="w-full py-4 text-sm font-bold uppercase tracking-wide border-2 border-black hover:bg-black hover:text-white transition-colors">
-              Buy It Now
+              <Sparkles size={18} /> Customize Now
             </button>
 
             {/* Features */}
