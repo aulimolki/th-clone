@@ -3,7 +3,7 @@ import {
   Star, ShoppingBag, Truck, RefreshCw, Globe, ChevronRight,
   Minus, Plus, Check,
 } from 'lucide-react';
-import { supabase, type Product } from '../supabase';
+import { supabase, type Product, type PrintType } from '../supabase';
 import { useCart } from '../cart';
 import ProductCard from '../components/ProductCard';
 
@@ -21,6 +21,7 @@ export default function ProductPage({ slug, onNavigate }: Props) {
   const [activeImage, setActiveImage] = useState(0);
   const [sizeError, setSizeError] = useState(false);
   const [added, setAdded] = useState(false);
+  const [printType, setPrintType] = useState<PrintType>('DTG');
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function ProductPage({ slug, onNavigate }: Props) {
       return;
     }
     setSizeError(false);
-    await addToCart(product, selectedSize, quantity);
+    await addToCart(product, selectedSize, quantity, printType);
     setAdded(true);
     setTimeout(() => setAdded(false), 3000);
   };
@@ -191,6 +192,36 @@ export default function ProductPage({ slug, onNavigate }: Props) {
             <p className="text-gray-600 leading-relaxed mb-6">
               {product.description}
             </p>
+
+            {/* Print type selector */}
+            <div className="mb-6">
+              <span className="text-sm font-bold uppercase tracking-wide mb-2 block">
+                Print Type
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {(['DTG', 'DTF'] as PrintType[]).map((pt) => (
+                  <button
+                    key={pt}
+                    onClick={() => setPrintType(pt)}
+                    className={`py-3 text-sm font-medium border transition-all ${
+                      printType === pt
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-200 hover:border-black'
+                  }`}
+                  >
+                    <div className="font-bold">{pt}</div>
+                    <div className="text-[10px] font-normal opacity-80 mt-0.5">
+                      {pt === 'DTG' ? 'Direct-to-Garment' : 'Direct-to-Film'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                {printType === 'DTG'
+                  ? 'DTG prints water-based ink directly into the fabric for a soft, breathable feel.'
+                  : 'DTF uses a printed film transferred with heat for vibrant colors and works on any fabric.'}
+              </p>
+            </div>
 
             {/* Size selector */}
             <div className="mb-6">

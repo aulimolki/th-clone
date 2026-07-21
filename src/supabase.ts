@@ -33,11 +33,14 @@ export type Product = {
   category?: Category;
 };
 
+export type PrintType = 'DTG' | 'DTF';
+
 export type CartItem = {
   id: string;
   product_id: string;
   size: string;
   quantity: number;
+  print_type: PrintType | null;
   created_at: string;
   product?: Product;
 };

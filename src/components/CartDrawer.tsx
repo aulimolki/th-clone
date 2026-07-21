@@ -73,6 +73,9 @@ export default function CartDrawer({ onNavigate }: { onNavigate: (path: string) 
                       {item.product?.name ?? 'Unknown product'}
                     </h3>
                     <p className="text-xs text-gray-500 mt-0.5">Size: {item.size}</p>
+                    {item.print_type && (
+                      <p className="text-xs text-gray-500 mt-0.5">Print: {item.print_type}</p>
+                    )}
                     <div className="flex items-center gap-1 mt-1">
                       <Star size={12} className="fill-black text-black" />
                       <span className="text-xs text-gray-500">
