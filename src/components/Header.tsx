@@ -24,6 +24,21 @@ const navItems: NavItem[] = [
       },
     ],
   },
+  {
+    label: 'Blank Tees',
+    href: '#/collections/blank-tees',
+    megaMenu: [
+      {
+        title: 'Shop Blank Tees',
+        links: [
+          { label: 'All Blank Tees', href: '#/collections/blank-tees' },
+          { label: 'Blank Classic Tee', href: '#/collections/blank-tees' },
+          { label: 'Blank Oversized Tee', href: '#/collections/blank-tees' },
+          { label: 'Blank Heavyweight Tee', href: '#/collections/blank-tees' },
+        ],
+      },
+    ],
+  },
 ];
 
 export default function Header({ onNavigate }: { onNavigate: (path: string) => void }) {
