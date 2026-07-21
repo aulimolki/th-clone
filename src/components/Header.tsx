@@ -10,68 +10,6 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
-    label: 'New Arrivals',
-    href: '#/new',
-    megaMenu: [
-      {
-        title: 'Shop New',
-        links: [
-          { label: 'All New Arrivals', href: '#/new' },
-          { label: 'Oversized Tees', href: '#/collections/oversized-tees' },
-          { label: 'Classic Tees', href: '#/collections/classic-tees' },
-          { label: 'Hoodies', href: '#/collections/hoodies' },
-          { label: 'Hats', href: '#/collections/hats' },
-        ],
-      },
-      {
-        title: 'Collections',
-        links: [
-          { label: 'Heavyweight', href: '#/collections/heavyweight' },
-          { label: 'Custom', href: '#/collections/custom' },
-          { label: 'Socks', href: '#/collections/socks' },
-          { label: 'Accessories', href: '#/collections/accessories' },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Oversized Tees',
-    href: '#/collections/oversized-tees',
-    megaMenu: [
-      {
-        title: 'Shop Oversized',
-        links: [
-          { label: 'All Oversized Tees', href: '#/collections/oversized-tees' },
-          { label: 'Graphic Oversized Tees', href: '#/collections/oversized-tees' },
-          { label: 'Blank Oversized Tees', href: '#/collections/oversized-tees' },
-          { label: 'Oversized Tee Packs', href: '#/collections/oversized-tees' },
-        ],
-      },
-      {
-        title: 'Featured',
-        links: [
-          { label: 'Heavyweight', href: '#/collections/heavyweight' },
-          { label: 'Custom Oversized', href: '#/collections/custom' },
-          { label: 'Bestsellers', href: '#/bestsellers' },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Classic Tees',
-    href: '#/collections/classic-tees',
-    megaMenu: [
-      {
-        title: 'Shop Classic',
-        links: [
-          { label: 'All Classic Tees', href: '#/collections/classic-tees' },
-          { label: 'Blank Classic Tees', href: '#/collections/classic-tees' },
-          { label: 'Classic Tee Packs', href: '#/collections/classic-tees' },
-        ],
-      },
-    ],
-  },
-  {
     label: 'Custom',
     href: '#/collections/custom',
     megaMenu: [
@@ -82,29 +20,6 @@ const navItems: NavItem[] = [
           { label: 'Custom Classic Tee', href: '#/product/custom-classic-tee' },
           { label: 'Custom Oversized Tee', href: '#/product/custom-oversized-tee' },
           { label: 'Custom Bootleg Tee', href: '#/product/custom-bootleg-tee' },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Hoodies',
-    href: '#/collections/hoodies',
-  },
-  {
-    label: 'Hats',
-    href: '#/collections/hats',
-  },
-  {
-    label: 'Accessories',
-    href: '#/collections/accessories',
-    megaMenu: [
-      {
-        title: 'Shop Accessories',
-        links: [
-          { label: 'All Accessories', href: '#/collections/accessories' },
-          { label: 'Socks', href: '#/collections/socks' },
-          { label: 'Hats', href: '#/collections/hats' },
-          { label: 'Tote Bags', href: '#/collections/accessories' },
         ],
       },
     ],
