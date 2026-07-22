@@ -73,8 +73,16 @@ export default function CartDrawer({ onNavigate }: { onNavigate: (path: string) 
                       {item.product?.name ?? 'Unknown product'}
                     </h3>
                     <p className="text-xs text-gray-500 mt-0.5">Size: {item.size}</p>
+                    {item.color && (
+                      <p className="text-xs text-gray-500 mt-0.5">Color: {item.color}</p>
+                    )}
                     {item.print_type && (
                       <p className="text-xs text-gray-500 mt-0.5">Print: {item.print_type}</p>
+                    )}
+                    {item.design_data && (item.design_data.text1.value || item.design_data.text2.value) && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Design: {[item.design_data.text1.value, item.design_data.text2.value].filter(Boolean).join(' / ')}
+                      </p>
                     )}
                     <div className="flex items-center gap-1 mt-1">
                       <Star size={12} className="fill-black text-black" />

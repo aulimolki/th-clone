@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import { supabase, type Product, type CartItem, type PrintType } from './supabase';
+import { supabase, type Product, type CartItem, type PrintType, type DesignData } from './supabase';
 
 type CartContextValue = {
   items: CartItem[];
@@ -7,7 +7,7 @@ type CartContextValue = {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addToCart: (product: Product, size: string, quantity?: number, printType?: PrintType) => Promise<void>;
+  addToCart: (product: Product, size: string, quantity?: number, printType?: PrintType, color?: string, designData?: DesignData) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   itemCount: number;
@@ -38,12 +38,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [fetchCart]);
 
   const addToCart = useCallback(
-    async (product: Product, size: string, quantity = 1, printType: PrintType = 'DTG') => {
+    async (product: Product, size: string, quantity = 1, printType: PrintType = 'DTG', color?: string, designData?: DesignData) => {
       const existing = items.find(
         (item) =>
           item.product_id === product.id &&
           item.size === size &&
-          (item.print_type ?? 'DTG') === printType,
+          (item.print_type ?? 'DTG') === printType &&
+          (item.color ?? null) === (color ?? null),
       );
       if (existing) {
         await supabase
@@ -53,7 +54,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       } else {
         await supabase
           .from('cart_items')
-          .insert({ product_id: product.id, size, quantity, print_type: printType });
+          .insert({
+            product_id: product.id,
+            size,
+            quantity,
+            print_type: printType,
+            color: color ?? null,
+            design_data: designData ?? null,
+          });
       }
       await fetchCart();
       setIsOpen(true);

@@ -35,12 +35,23 @@ export type Product = {
 
 export type PrintType = 'DTG' | 'DTF';
 
+export type DesignData = {
+  color: string;
+  images: string[];
+  text1: { value: string; font: string; color: string };
+  text2: { value: string; font: string; color: string };
+  sticker: string;
+  background: string;
+};
+
 export type CartItem = {
   id: string;
   product_id: string;
   size: string;
   quantity: number;
   print_type: PrintType | null;
+  color: string | null;
+  design_data: DesignData | null;
   created_at: string;
   product?: Product;
 };

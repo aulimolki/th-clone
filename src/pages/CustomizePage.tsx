@@ -8,8 +8,12 @@ import {
   Plus,
   Trash2,
   ChevronRight,
+  Check,
+  ShoppingBag,
+  ShieldCheck,
 } from 'lucide-react';
-import { supabase, type Product } from '../supabase';
+import { supabase, type Product, type PrintType, type DesignData } from '../supabase';
+import { useCart } from '../cart';
 
 type Props = {
   slug: string;
@@ -91,13 +95,36 @@ const BACKGROUNDS = [
   { label: 'Brick',     url: 'https://images.pexels.com/photos/1103970/pexels-photo-1103970.jpeg?w=200&q=60' },
 ];
 
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
+
+const SIZE_CHART: { size: string; width: string; length: string }[] = [
+  { size: 'XS',  width: '18"',  length: '26"' },
+  { size: 'S',   width: '20"',  length: '27"' },
+  { size: 'M',   width: '22"',  length: '28"' },
+  { size: 'L',   width: '24"',  length: '29"' },
+  { size: 'XL',  width: '26"',  length: '30"' },
+  { size: '2XL', width: '28"',  length: '31"' },
+  { size: '3XL', width: '30"',  length: '32"' },
+  { size: '4XL', width: '32"',  length: '33"' },
+];
+
+/* ── tiered pricing ── */
+const PRICE_TIERS = [
+  { min: 1,  discount: 0,    label: '1-2 items' },
+  { min: 3,  discount: 0.10, label: '3-5 items — 10% off' },
+  { min: 6,  discount: 0.20, label: '6-11 items — 20% off' },
+  { min: 12, discount: 0.30, label: '12+ items — 30% off' },
+];
+
+function getTier(quantity: number) {
+  let tier = PRICE_TIERS[0];
+  for (const t of PRICE_TIERS) if (quantity >= t.min) tier = t;
+  return tier;
+}
+
 /* ─── state shape ────────────────────────────────────────────── */
 
-type TextOption = {
-  value: string;
-  font: string;
-  color: string;
-};
+type TextOption = { value: string; font: string; color: string };
 
 type DesignState = {
   color: string;
@@ -125,7 +152,9 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
   const [design, setDesign] = useState<DesignState>(DEFAULT_STATE);
   const [history, setHistory] = useState<DesignState[]>([DEFAULT_STATE]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [step, setStep] = useState<'design' | 'checkout'>('design');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     (async () => {
@@ -163,15 +192,9 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
     setDesign(history[idx]);
   };
 
-  const reset = () => {
-    pushHistory(DEFAULT_STATE);
-  };
+  const reset = () => pushHistory(DEFAULT_STATE);
+  const update = (partial: Partial<DesignState>) => pushHistory({ ...design, ...partial });
 
-  const update = (partial: Partial<DesignState>) => {
-    pushHistory({ ...design, ...partial });
-  };
-
-  /* ── image upload ── */
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
@@ -189,11 +212,9 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
     e.target.value = '';
   };
 
-  const removeImage = (idx: number) => {
+  const removeImage = (idx: number) =>
     update({ images: design.images.filter((_, i) => i !== idx) });
-  };
 
-  /* ── derived ── */
   const activeColor = TEE_COLORS.find((c) => c.name === design.color) ?? TEE_COLORS[0];
   const activeBg = BACKGROUNDS.find((b) => b.label === design.background);
 
@@ -209,10 +230,22 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-gray-500">Product not found.</p>
-        <button onClick={() => onNavigate('#/')} className="underline font-medium">
-          Back to home
-        </button>
+        <button onClick={() => onNavigate('#/')} className="underline font-medium">Back to home</button>
       </div>
+    );
+  }
+
+  /* ── checkout step ── */
+  if (step === 'checkout') {
+    return (
+      <CheckoutStep
+        product={product}
+        design={design}
+        slug={slug}
+        onNavigate={onNavigate}
+        onBack={() => setStep('design')}
+        addToCart={addToCart}
+      />
     );
   }
 
@@ -227,51 +260,29 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
           <ArrowLeft size={14} /> Back
         </button>
 
-        {/* Tee mockup */}
         <div className="relative max-w-lg w-full">
-          {/* Tee shape with background color */}
           <div
             className="relative w-full aspect-[5/6] rounded-sm overflow-hidden transition-colors duration-300"
             style={{ backgroundColor: activeColor.hex }}
           >
-            {/* Tee image overlaid with mix-blend to color it */}
             <img
               src={product.image_url}
               alt={product.name}
               className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
             />
-
-            {/* Design print area */}
             <div
               className="absolute border-2 border-dashed border-gray-400/70 overflow-hidden"
               style={{ top: '18%', left: '22%', right: '22%', bottom: '22%' }}
             >
-              {/* Background layer */}
               {activeBg && (
-                <img
-                  src={activeBg.url}
-                  alt={activeBg.label}
-                  className="absolute inset-0 w-full h-full object-cover opacity-80"
-                />
+                <img src={activeBg.url} alt={activeBg.label} className="absolute inset-0 w-full h-full object-cover opacity-80" />
               )}
-
-              {/* Uploaded image */}
               {design.images[0] && (
-                <img
-                  src={design.images[0]}
-                  alt="Custom"
-                  className="absolute inset-0 w-full h-full object-contain p-2"
-                />
+                <img src={design.images[0]} alt="Custom" className="absolute inset-0 w-full h-full object-contain p-2" />
               )}
-
-              {/* Sticker */}
               {design.sticker && (
-                <div className="absolute top-2 right-2 text-4xl leading-none select-none">
-                  {design.sticker}
-                </div>
+                <div className="absolute top-2 right-2 text-4xl leading-none select-none">{design.sticker}</div>
               )}
-
-              {/* Text 1 — top */}
               {design.text1.value && (
                 <div
                   className="absolute top-2 left-0 right-0 text-center px-2 font-bold text-2xl leading-tight"
@@ -280,8 +291,6 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
                   {design.text1.value}
                 </div>
               )}
-
-              {/* Text 2 — bottom */}
               {design.text2.value && (
                 <div
                   className="absolute bottom-2 left-0 right-0 text-center px-2 font-bold text-xl leading-tight"
@@ -307,34 +316,24 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
 
         {/* Scrollable sections */}
         <div className="flex-1 overflow-y-auto">
-          {/* ── Colour ── */}
+          {/* ── Colour — small circles ── */}
           <Section title="Colour">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-wrap gap-3">
               {TEE_COLORS.map((c) => (
                 <button
                   key={c.name}
                   onClick={() => update({ color: c.name })}
                   title={c.name}
-                  className={`aspect-square rounded border-2 transition-all flex items-center justify-center ${
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${
                     design.color === c.name
-                      ? 'border-violet-500 ring-2 ring-violet-300'
+                      ? 'border-violet-500 ring-2 ring-violet-300 ring-offset-2'
                       : 'border-gray-200 hover:border-gray-400'
                   }`}
                   style={{ backgroundColor: c.hex }}
-                >
-                  {design.color === c.name && (
-                    <div className="w-3 h-3 rounded-full bg-violet-500 shadow" />
-                  )}
-                </button>
+                />
               ))}
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-1">
-              {TEE_COLORS.map((c) => (
-                <span key={c.name} className="text-center text-[10px] text-gray-500 truncate">
-                  {c.name}
-                </span>
-              ))}
-            </div>
+            <p className="text-xs text-gray-500 mt-2">Selected: <span className="font-medium text-gray-700">{design.color}</span></p>
           </Section>
 
           {/* ── Upload Images ── */}
@@ -379,19 +378,9 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
 
           {/* ── Add Your Text ── */}
           <Section title="Add Your Text">
-            <TextEditor
-              label="TEXT OPTION 1"
-              value={design.text1}
-              maxLength={20}
-              onChange={(t1) => update({ text1: t1 })}
-            />
+            <TextEditor label="TEXT OPTION 1" value={design.text1} maxLength={20} onChange={(t1) => update({ text1: t1 })} />
             <div className="mt-4">
-              <TextEditor
-                label="TEXT OPTION 2"
-                value={design.text2}
-                maxLength={30}
-                onChange={(t2) => update({ text2: t2 })}
-              />
+              <TextEditor label="TEXT OPTION 2" value={design.text2} maxLength={30} onChange={(t2) => update({ text2: t2 })} />
             </div>
           </Section>
 
@@ -405,16 +394,13 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
                   onClick={() => update({ sticker: design.sticker === s.emoji ? '' : s.emoji })}
                   title={s.label}
                   className={`aspect-square text-xl flex items-center justify-center rounded transition-all ${
-                    design.sticker === s.emoji
-                      ? 'bg-violet-100 ring-2 ring-violet-400'
-                      : 'bg-gray-50 hover:bg-gray-100'
+                    design.sticker === s.emoji ? 'bg-violet-100 ring-2 ring-violet-400' : 'bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
                   {s.emoji}
                 </button>
               ))}
             </div>
-
             <p className="text-xs font-semibold text-gray-700 mb-2">Add Backgrounds</p>
             <div className="grid grid-cols-3 gap-2">
               {BACKGROUNDS.map((bg) => (
@@ -423,16 +409,10 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
                   onClick={() => update({ background: design.background === bg.label ? '' : bg.label })}
                   title={bg.label}
                   className={`aspect-square rounded overflow-hidden border-2 transition-all ${
-                    design.background === bg.label
-                      ? 'border-violet-500 ring-2 ring-violet-300'
-                      : 'border-gray-200 hover:border-gray-400'
+                    design.background === bg.label ? 'border-violet-500 ring-2 ring-violet-300' : 'border-gray-200 hover:border-gray-400'
                   }`}
                 >
-                  <img
-                    src={bg.url}
-                    alt={bg.label}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={bg.url} alt={bg.label} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -444,7 +424,7 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
           <button
             className="w-full py-4 rounded text-white font-semibold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
             style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
-            onClick={() => onNavigate(`#/product/${slug}`)}
+            onClick={() => setStep('checkout')}
           >
             Continue <ChevronRight size={18} />
           </button>
@@ -454,7 +434,294 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
   );
 }
 
-/* ─── sub-components ─────────────────────────────────────────── */
+/* ─── checkout step ──────────────────────────────────────────── */
+
+function CheckoutStep({
+  product,
+  design,
+  slug,
+  onNavigate,
+  onBack,
+  addToCart,
+}: {
+  product: Product;
+  design: DesignState;
+  slug: string;
+  onNavigate: (path: string) => void;
+  onBack: () => void;
+  addToCart: (product: Product, size: string, quantity: number, printType: PrintType, color?: string, designData?: DesignData) => Promise<void>;
+}) {
+  const [rightsChecked, setRightsChecked] = useState(false);
+  const [size, setSize] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [printType, setPrintType] = useState<PrintType>('DTG');
+  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  const tier = getTier(quantity);
+  const unitPrice = Number(product.price) * (1 - tier.discount);
+  const total = unitPrice * quantity;
+  const savings = (Number(product.price) - unitPrice) * quantity;
+
+  const handleAddToCart = async () => {
+    if (!size) return;
+    const designData: DesignData = {
+      color: design.color,
+      images: design.images,
+      text1: design.text1,
+      text2: design.text2,
+      sticker: design.sticker,
+      background: design.background,
+    };
+    await addToCart(product, size, quantity, printType, design.color, designData);
+    setAdded(true);
+    setTimeout(() => {
+      setAdded(false);
+      onNavigate(`#/product/${slug}`);
+    }, 1500);
+  };
+
+  const canAdd = rightsChecked && !!size;
+
+  return (
+    <div className="min-h-screen bg-[#f4f4f4] py-8 px-4">
+      <div className="max-w-3xl mx-auto">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-black mb-6"
+        >
+          <ArrowLeft size={14} /> Back to designer
+        </button>
+
+        <h1 className="text-2xl font-black tracking-tight mb-1">Review & Checkout</h1>
+        <p className="text-sm text-gray-500 mb-8">Confirm your design, choose your size, and add to cart.</p>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Design summary */}
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-sm font-bold uppercase tracking-wide mb-4">Your Design</h2>
+            <div className="flex gap-4">
+              <div
+                className="w-28 h-32 rounded-sm overflow-hidden flex-shrink-0 border border-gray-200"
+                style={{ backgroundColor: TEE_COLORS.find((c) => c.name === design.color)?.hex ?? '#fff' }}
+              >
+                <img src={product.image_url} alt="" className="w-full h-full object-cover mix-blend-multiply" />
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <DesignRow label="Color" value={design.color} />
+                <DesignRow label="Text 1" value={design.text1.value || '—'} />
+                <DesignRow label="Text 2" value={design.text2.value || '—'} />
+                <DesignRow label="Sticker" value={design.sticker || '—'} />
+                <DesignRow label="Background" value={design.background || '—'} />
+                <DesignRow label="Images" value={design.images.length ? `${design.images.length} uploaded` : 'None'} />
+              </div>
+            </div>
+          </div>
+
+          {/* Print type */}
+          <div className="bg-white rounded-lg p-6 shadow-sm">
+            <h2 className="text-sm font-bold uppercase tracking-wide mb-4">Print Type</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {(['DTG', 'DTF'] as PrintType[]).map((pt) => (
+                <button
+                  key={pt}
+                  onClick={() => setPrintType(pt)}
+                  className={`py-3 text-sm font-medium border rounded transition-all ${
+                    printType === pt ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="font-bold">{pt}</div>
+                  <div className="text-[10px] font-normal opacity-80 mt-0.5">
+                    {pt === 'DTG' ? 'Direct-to-Garment' : 'Direct-to-Film'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Design rights checkbox */}
+        <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <button
+              type="button"
+              onClick={() => setRightsChecked(!rightsChecked)}
+              className={`mt-0.5 w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                rightsChecked ? 'bg-violet-600 border-violet-600' : 'border-gray-300 hover:border-violet-400'
+              }`}
+            >
+              {rightsChecked && <Check size={16} className="text-white" />}
+            </button>
+            <div>
+              <span className="text-sm font-semibold text-gray-900">I confirm I own the rights to this design</span>
+              <p className="text-xs text-gray-500 mt-1">
+                I confirm that I own or have permission to use all uploaded images, text, and graphics in this design,
+                and that it does not infringe on any third-party copyrights, trademarks, or intellectual property rights.
+              </p>
+            </div>
+          </label>
+        </div>
+
+        {/* Size selection + size chart */}
+        <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold uppercase tracking-wide">Select Size</h2>
+            <button
+              onClick={() => setShowSizeChart(!showSizeChart)}
+              className="text-xs underline text-gray-500 hover:text-violet-600"
+            >
+              {showSizeChart ? 'Hide size chart' : 'View size chart'}
+            </button>
+          </div>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {SIZES.map((s) => (
+              <button
+                key={s}
+                onClick={() => setSize(s)}
+                className={`py-3 text-sm font-medium border rounded transition-all ${
+                  size === s ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          {showSizeChart && (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-2 font-bold">Size</th>
+                    <th className="text-left py-2 font-bold">Chest Width</th>
+                    <th className="text-left py-2 font-bold">Body Length</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SIZE_CHART.map((row) => (
+                    <tr key={row.size} className="border-b border-gray-100">
+                      <td className="py-2 font-medium">{row.size}</td>
+                      <td className="py-2 text-gray-600">{row.width}</td>
+                      <td className="py-2 text-gray-600">{row.length}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Quantity + tiered pricing */}
+        <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
+          <h2 className="text-sm font-bold uppercase tracking-wide mb-4">Quantity & Pricing</h2>
+
+          {/* Quantity selector */}
+          <div className="flex items-center gap-4 mb-5">
+            <span className="text-sm text-gray-600">Quantity</span>
+            <div className="flex items-center border border-gray-200 rounded">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="px-4 py-2 text-lg hover:bg-gray-50"
+              >−</button>
+              <span className="px-6 text-sm font-semibold">{quantity}</span>
+              <button
+                onClick={() => setQuantity(Math.min(99, quantity + 1))}
+                className="px-4 py-2 text-lg hover:bg-gray-50"
+              >+</button>
+            </div>
+          </div>
+
+          {/* Tier table */}
+          <div className="space-y-2 mb-5">
+            {PRICE_TIERS.map((t) => {
+              const active = quantity >= t.min && (t === PRICE_TIERS[PRICE_TIERS.length - 1] || quantity < PRICE_TIERS[PRICE_TIERS.indexOf(t) + 1].min);
+              return (
+                <div
+                  key={t.min}
+                  className={`flex items-center justify-between px-4 py-2.5 rounded text-sm transition-all ${
+                    active ? 'bg-violet-50 border border-violet-300' : 'bg-gray-50'
+                  }`}
+                >
+                  <span className={active ? 'font-bold text-violet-700' : 'text-gray-600'}>
+                    {t.label}
+                  </span>
+                  {active && <Check size={16} className="text-violet-600" />}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Price summary */}
+          <div className="border-t border-gray-100 pt-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Unit price</span>
+              <span className="font-medium">
+                {tier.discount > 0 ? (
+                  <>
+                    <span className="text-gray-400 line-through mr-2">{`${Number(product.price).toFixed(2)}`}</span>
+                    {`${unitPrice.toFixed(2)}`}
+                  </>
+                ) : (
+                  `${unitPrice.toFixed(2)}`
+                )}
+              </span>
+            </div>
+            {savings > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-green-600 font-medium">Bulk savings</span>
+                <span className="text-green-600 font-medium">−{`${savings.toFixed(2)}`}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-100">
+              <span>Total</span>
+              <span>{`${total.toFixed(2)}`}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Add to cart */}
+        <div className="mt-6">
+          <button
+            onClick={handleAddToCart}
+            disabled={!canAdd}
+            className={`w-full py-4 rounded text-sm font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${
+              canAdd
+                ? 'bg-black text-white hover:bg-gray-800'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {added ? (
+              <><Check size={18} /> Added to Cart!</>
+            ) : (
+              <><ShoppingBag size={18} /> Add to Cart — {`${total.toFixed(2)}`}</>
+            )}
+          </button>
+          {!canAdd && (
+            <p className="text-xs text-gray-400 text-center mt-2">
+              {!rightsChecked && !size ? 'Please confirm design rights and select a size' :
+               !rightsChecked ? 'Please confirm you own the rights to this design' :
+               'Please select a size'}
+            </p>
+          )}
+          <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-gray-400">
+            <ShieldCheck size={14} /> Secure checkout with encrypted payment
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── helpers ────────────────────────────────────────────────── */
+
+function DesignRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <span className="text-gray-400 w-20">{label}</span>
+      <span className="font-medium text-gray-800 truncate">{value}</span>
+    </div>
+  );
+}
 
 function Section({
   title,
@@ -516,9 +783,7 @@ function TextEditor({
     <div>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-bold text-gray-600">{label}</span>
-        <span className="text-xs text-gray-400">
-          {value.value.length}/{maxLength}
-        </span>
+        <span className="text-xs text-gray-400">{value.value.length}/{maxLength}</span>
       </div>
       <input
         type="text"
@@ -528,7 +793,6 @@ function TextEditor({
         className="w-full border border-gray-200 rounded px-3 py-2 text-sm outline-none focus:border-violet-400 mb-3"
         placeholder="Enter text…"
       />
-
       <p className="text-xs text-gray-500 mb-2">Font Family</p>
       <div className="flex flex-wrap gap-1.5 mb-3">
         {FONT_FAMILIES.map((f) => (
@@ -537,9 +801,7 @@ function TextEditor({
             onClick={() => onChange({ ...value, font: f.value })}
             title={f.label}
             className={`px-2 py-1.5 text-xs rounded border transition-all ${
-              value.font === f.value
-                ? 'border-violet-500 bg-violet-50 text-violet-700'
-                : 'border-gray-200 hover:border-gray-400'
+              value.font === f.value ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 hover:border-gray-400'
             }`}
             style={{ fontFamily: f.value }}
           >
@@ -547,12 +809,8 @@ function TextEditor({
           </button>
         ))}
       </div>
-
       <p className="text-xs text-gray-500 mb-2">
-        Font Color:{' '}
-        <span className="font-medium text-gray-700">
-          {FONT_COLORS.find((c) => c.hex === value.color)?.name ?? 'Custom'}
-        </span>
+        Font Color: <span className="font-medium text-gray-700">{FONT_COLORS.find((c) => c.hex === value.color)?.name ?? 'Custom'}</span>
       </p>
       <div className="flex flex-wrap gap-2">
         {FONT_COLORS.map((c) => (
@@ -561,9 +819,7 @@ function TextEditor({
             onClick={() => onChange({ ...value, color: c.hex })}
             title={c.name}
             className={`w-7 h-7 rounded-full border-2 transition-all ${
-              value.color === c.hex
-                ? 'border-violet-500 ring-2 ring-violet-300 ring-offset-1'
-                : 'border-gray-200 hover:border-gray-400'
+              value.color === c.hex ? 'border-violet-500 ring-2 ring-violet-300 ring-offset-1' : 'border-gray-200 hover:border-gray-400'
             }`}
             style={{ backgroundColor: c.hex }}
           />
