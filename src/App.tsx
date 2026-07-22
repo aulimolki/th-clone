@@ -7,12 +7,14 @@ import HomePage from './pages/HomePage';
 import CollectionPage from './pages/CollectionPage';
 import ProductPage from './pages/ProductPage';
 import CustomizePage from './pages/CustomizePage';
+import CheckoutPage from './pages/CheckoutPage';
 
 type Route =
   | { name: 'home' }
   | { name: 'collection'; slug?: string }
   | { name: 'product'; slug: string }
   | { name: 'customize'; slug: string }
+  | { name: 'checkout' }
   | { name: 'search'; query: string }
   | { name: 'new' };
 
@@ -28,6 +30,7 @@ function parseHash(): Route {
   const collectionAll = hash.match(/^\/collections$/);
   if (collectionAll) return { name: 'collection' };
   const searchMatch = hash.match(/^\/search\?q=(.*)$/);
+  if (hash.match(/^\/checkout$/)) return { name: 'checkout' };
   if (searchMatch) return { name: 'search', query: decodeURIComponent(searchMatch[1]) };
   if (hash.match(/^\/new/)) return { name: 'new' };
   return { name: 'home' };
@@ -64,6 +67,7 @@ export default function App() {
           {route.name === 'customize' && (
             <CustomizePage slug={route.slug} onNavigate={navigate} />
           )}
+          {route.name === 'checkout' && <CheckoutPage onNavigate={navigate} />}
           {route.name === 'new' && (
             <CollectionPage onNavigate={navigate} />
           )}
