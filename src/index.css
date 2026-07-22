@@ -24,6 +24,9 @@
   .animate-slideInLeft {
     animation: slideInLeft 0.25s ease-out;
   }
+  .animate-slide-in {
+    animation: slideInRight 0.3s ease-out;
+  }
 }
 
 @keyframes marquee {
@@ -38,6 +41,11 @@
 
 @keyframes slideInLeft {
   from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
 
