@@ -434,6 +434,271 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
   );
 }
 
+/* ─── checkout overlay ───────────────────────────────────────── */
+
+function CheckoutOverlay({
+  product,
+  design,
+  activeColorHex,
+  activeBg,
+  onClose,
+  onNavigate,
+  addToCart,
+}: {
+  product: Product;
+  design: DesignState;
+  activeColorHex: string;
+  activeBg: { label: string; url: string } | undefined;
+  onClose: () => void;
+  onNavigate: (path: string) => void;
+  addToCart: (product: Product, size: string, quantity: number, printType: PrintType, color?: string, designData?: DesignData) => Promise<void>;
+}) {
+  const [rightsChecked, setRightsChecked] = useState(false);
+  const [printType, setPrintType] = useState<PrintType>('DTG');
+  const [sizeQtys, setSizeQtys] = useState<Record<string, number>>({});
+  const [added, setAdded] = useState(false);
+
+  const totalQty = Object.values(sizeQtys).reduce((a, b) => a + b, 0);
+  const tier = getTier(totalQty);
+  const unitPrice = Number(product.price) * (1 - tier.discount);
+  const total = unitPrice * totalQty;
+  const savings = (Number(product.price) - unitPrice) * totalQty;
+
+  const setQty = (size: string, delta: number) => {
+    setSizeQtys((prev) => {
+      const next = Math.max(0, (prev[size] ?? 0) + delta);
+      return { ...prev, [size]: next };
+    });
+  };
+
+  const handleAddToCart = async () => {
+    if (!rightsChecked || totalQty === 0) return;
+    const designData: DesignData = {
+      color: design.color,
+      images: design.images,
+      text1: design.text1,
+      text2: design.text2,
+      sticker: design.sticker,
+      background: design.background,
+    };
+    for (const [size, qty] of Object.entries(sizeQtys)) {
+      if (qty > 0) await addToCart(product, size, qty, printType, design.color, designData);
+    }
+    setAdded(true);
+    setTimeout(() => {
+      setAdded(false);
+      onNavigate(`#/product/${product.slug}`);
+    }, 1500);
+  };
+
+  const canAdd = rightsChecked && totalQty > 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/40 transition-opacity" onClick={onClose} />
+      <div className="relative w-[400px] max-w-full bg-white h-full flex flex-col shadow-2xl animate-slide-in">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="text-base font-bold">Review & Checkout</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Tee preview thumbnail */}
+          <div className="px-5 py-5 border-b border-gray-100">
+            <div className="flex gap-4">
+              <div
+                className="relative w-24 h-28 rounded-sm overflow-hidden flex-shrink-0 border border-gray-200"
+                style={{ backgroundColor: activeColorHex }}
+              >
+                <img src={product.image_url} alt="" className="w-full h-full object-cover mix-blend-multiply" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {design.text1.value && (
+                    <span
+                      className="text-[10px] font-bold text-center px-1 leading-tight"
+                      style={{ fontFamily: design.text1.font, color: design.text1.color }}
+                    >
+                      {design.text1.value}
+                    </span>
+                  )}
+                  {design.sticker && <span className="absolute top-1 right-1 text-sm">{design.sticker}</span>}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-900 truncate">{product.name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">Color: {design.color}</p>
+                <p className="text-xs text-gray-500">Print: {printType}</p>
+                {design.text1.value && <p className="text-xs text-gray-500 truncate">Text: {design.text1.value}</p>}
+                {design.text2.value && <p className="text-xs text-gray-500 truncate">Text 2: {design.text2.value}</p>}
+                {design.sticker && <p className="text-xs text-gray-500">Sticker: {design.sticker}</p>}
+                {design.images.length > 0 && <p className="text-xs text-gray-500">{design.images.length} image(s)</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Print type */}
+          <div className="px-5 py-4 border-b border-gray-100">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-700 mb-2">Print Type</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(['DTG', 'DTF'] as PrintType[]).map((pt) => (
+                <button
+                  key={pt}
+                  onClick={() => setPrintType(pt)}
+                  className={`py-2.5 text-xs font-medium border rounded transition-all ${
+                    printType === pt ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="font-bold">{pt}</div>
+                  <div className="text-[9px] font-normal opacity-80 mt-0.5">
+                    {pt === 'DTG' ? 'Direct-to-Garment' : 'Direct-to-Film'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Per-size quantity grid */}
+          <div className="px-5 py-4 border-b border-gray-100">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">Select Sizes & Quantity</p>
+            <div className="grid grid-cols-2 gap-2">
+              {SIZES.map((s) => {
+                const qty = sizeQtys[s] ?? 0;
+                return (
+                  <div
+                    key={s}
+                    className={`flex items-center justify-between border rounded-lg px-3 py-2 transition-all ${
+                      qty > 0 ? 'border-violet-400 bg-violet-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <span className="text-sm font-semibold w-8">{s}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setQty(s, -1)}
+                        disabled={qty === 0}
+                        className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="w-7 text-center text-sm font-semibold">{qty}</span>
+                      <button
+                        onClick={() => setQty(s, 1)}
+                        className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Tiered savings progress */}
+          <div className="px-5 py-4 border-b border-gray-100">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">Bulk Savings</p>
+            <div className="space-y-2">
+              {PRICE_TIERS.map((t, i) => {
+                const nextTier = PRICE_TIERS[i + 1];
+                const isUnlocked = totalQty >= t.min;
+                const isCurrent = isUnlocked && (!nextTier || totalQty < nextTier.min);
+                const progress = isUnlocked ? 100 : Math.min(100, (totalQty / t.min) * 100);
+                return (
+                  <div key={t.min}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs ${isCurrent ? 'font-bold text-violet-700' : isUnlocked ? 'text-green-600' : 'text-gray-500'}`}>
+                        {t.label}
+                      </span>
+                      {isUnlocked && <Check size={14} className={isCurrent ? 'text-violet-600' : 'text-green-500'} />}
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${isCurrent ? 'bg-violet-500' : isUnlocked ? 'bg-green-500' : 'bg-gray-300'}`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {tier.discount > 0 && totalQty > 0 && (
+              <p className="text-xs text-green-600 font-medium mt-2">
+                You save {`${savings.toFixed(2)}`} ({Math.round(tier.discount * 100)}% off)
+              </p>
+            )}
+            {tier.discount === 0 && totalQty > 0 && totalQty < 3 && (
+              <p className="text-xs text-gray-400 mt-2">Add {3 - totalQty} more to unlock 10% off</p>
+            )}
+          </div>
+
+          {/* Design rights */}
+          <div className="px-5 py-4 border-b border-gray-100">
+            <button
+              type="button"
+              onClick={() => setRightsChecked(!rightsChecked)}
+              className="flex items-start gap-3 text-left w-full"
+            >
+              <div className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                rightsChecked ? 'bg-violet-600 border-violet-600' : 'border-gray-300 hover:border-violet-400'
+              }`}>
+                {rightsChecked && <Check size={13} className="text-white" />}
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-gray-900">I own the rights to this design</span>
+                <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
+                  I confirm I have permission to use all uploaded images, text, and graphics, and that it does not infringe on any third-party copyrights or trademarks.
+                </p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Sticky footer: summary + add to cart */}
+        <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Items</span>
+            <span className="font-medium">{totalQty}</span>
+          </div>
+          {tier.discount > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600 font-medium">Bulk savings</span>
+              <span className="text-green-600 font-medium">−{`${savings.toFixed(2)}`}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-base font-bold">
+            <span>Total</span>
+            <span>{`${total.toFixed(2)}`}</span>
+          </div>
+          <button
+            onClick={handleAddToCart}
+            disabled={!canAdd}
+            className={`w-full py-3.5 rounded text-sm font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all ${
+              canAdd ? 'bg-black text-white hover:bg-gray-800' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {added ? (
+              <><Check size={18} /> Added to Cart!</>
+            ) : (
+              <><ShoppingBag size={18} /> Add to Cart</>
+            )}
+          </button>
+          {!canAdd && (
+            <p className="text-[11px] text-gray-400 text-center">
+              {!rightsChecked && totalQty === 0 ? 'Confirm rights & select sizes' :
+               !rightsChecked ? 'Please confirm design rights' : 'Select at least one size'}
+            </p>
+          )}
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
+            <ShieldCheck size={13} /> Secure checkout
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── helpers ────────────────────────────────────────────────── */
 
 function Section({
