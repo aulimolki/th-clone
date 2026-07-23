@@ -10,6 +10,7 @@ type CartContextValue = {
   addToCart: (product: Product, size: string, quantity?: number, printType?: PrintType, color?: string, designData?: DesignData) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
+  updateItemDesign: (id: string, color: string, designData: DesignData) => Promise<void>;
   itemCount: number;
   subtotal: number;
 };
@@ -89,6 +90,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [fetchCart],
   );
 
+  const updateItemDesign = useCallback(
+    async (id: string, color: string, designData: DesignData) => {
+      await supabase
+        .from('cart_items')
+        .update({ color, design_data: designData })
+        .eq('id', id);
+      await fetchCart();
+    },
+    [fetchCart],
+  );
+
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => {
     const price = item.product?.price ?? 0;
@@ -106,6 +118,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addToCart,
         updateQuantity,
         removeItem,
+        updateItemDesign,
         itemCount,
         subtotal,
       }}

@@ -19,6 +19,7 @@ import { useCart } from '../cart';
 type Props = {
   slug: string;
   onNavigate: (path: string) => void;
+  editItemId?: string;
 };
 
 /* ─── constants ─────────────────────────────────────────────── */
@@ -147,7 +148,7 @@ const DEFAULT_STATE: DesignState = {
 
 /* ─── component ──────────────────────────────────────────────── */
 
-export default function CustomizePage({ slug, onNavigate }: Props) {
+export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [design, setDesign] = useState<DesignState>(DEFAULT_STATE);
@@ -155,7 +156,8 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [step, setStep] = useState<'design' | 'checkout'>('design');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { addToCart } = useCart();
+  const { addToCart, items, updateItemDesign } = useCart();
+  const isEditing = Boolean(editItemId);
 
   useEffect(() => {
     (async () => {
@@ -170,6 +172,24 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
       window.scrollTo(0, 0);
     })();
   }, [slug]);
+
+  useEffect(() => {
+    if (!editItemId || items.length === 0) return;
+    const item = items.find((i) => i.id === editItemId);
+    if (!item || !item.design_data) return;
+    const d = item.design_data;
+    const restored: DesignState = {
+      color: d.color,
+      images: d.images,
+      text1: d.text1,
+      text2: d.text2,
+      sticker: d.sticker,
+      background: d.background,
+    };
+    setDesign(restored);
+    setHistory([restored]);
+    setHistoryIndex(0);
+  }, [editItemId, items]);
 
   /* ── history helpers ── */
   const pushHistory = (next: DesignState) => {
@@ -428,6 +448,8 @@ export default function CustomizePage({ slug, onNavigate }: Props) {
           onClose={() => setStep('design')}
           onNavigate={onNavigate}
           addToCart={addToCart}
+          editItemId={editItemId}
+          updateItemDesign={updateItemDesign}
         />
       )}
     </div>
@@ -444,6 +466,8 @@ function CheckoutOverlay({
   onClose,
   onNavigate,
   addToCart,
+  editItemId,
+  updateItemDesign,
 }: {
   product: Product;
   design: DesignState;
@@ -452,7 +476,10 @@ function CheckoutOverlay({
   onClose: () => void;
   onNavigate: (path: string) => void;
   addToCart: (product: Product, size: string, quantity: number, printType: PrintType, color?: string, designData?: DesignData) => Promise<void>;
+  editItemId?: string;
+  updateItemDesign: (id: string, color: string, designData: DesignData) => Promise<void>;
 }) {
+  const isEditing = Boolean(editItemId);
   const [rightsChecked, setRightsChecked] = useState(false);
   const [printType, setPrintType] = useState<PrintType>('DTG');
   const [sizeQtys, setSizeQtys] = useState<Record<string, number>>({});
@@ -481,8 +508,12 @@ function CheckoutOverlay({
       sticker: design.sticker,
       background: design.background,
     };
-    for (const [size, qty] of Object.entries(sizeQtys)) {
-      if (qty > 0) await addToCart(product, size, qty, printType, design.color, designData);
+    if (isEditing && editItemId) {
+      await updateItemDesign(editItemId, design.color, designData);
+    } else {
+      for (const [size, qty] of Object.entries(sizeQtys)) {
+        if (qty > 0) await addToCart(product, size, qty, printType, design.color, designData);
+      }
     }
     setAdded(true);
     setTimeout(() => {
@@ -491,7 +522,7 @@ function CheckoutOverlay({
     }, 1500);
   };
 
-  const canAdd = rightsChecked && totalQty > 0;
+  const canAdd = rightsChecked && (isEditing || totalQty > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -499,7 +530,7 @@ function CheckoutOverlay({
       <div className="relative w-[400px] max-w-full bg-white h-full flex flex-col shadow-2xl animate-slide-in">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="text-base font-bold">Review & Checkout</h2>
+          <h2 className="text-base font-bold">{isEditing ? 'Edit Design' : 'Review & Checkout'}</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100">
             <X size={18} />
           </button>
@@ -561,40 +592,42 @@ function CheckoutOverlay({
           </div>
 
           {/* Per-size quantity grid */}
-          <div className="px-5 py-4 border-b border-gray-100">
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">Select Sizes & Quantity</p>
-            <div className="grid grid-cols-2 gap-2">
-              {SIZES.map((s) => {
-                const qty = sizeQtys[s] ?? 0;
-                return (
-                  <div
-                    key={s}
-                    className={`flex items-center justify-between border rounded-lg px-3 py-2 transition-all ${
-                      qty > 0 ? 'border-violet-400 bg-violet-50' : 'border-gray-200'
-                    }`}
-                  >
-                    <span className="text-sm font-semibold w-8">{s}</span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setQty(s, -1)}
-                        disabled={qty === 0}
-                        className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30"
-                      >
-                        <Minus size={12} />
-                      </button>
-                      <span className="w-7 text-center text-sm font-semibold">{qty}</span>
-                      <button
-                        onClick={() => setQty(s, 1)}
-                        className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
-                      >
-                        <Plus size={12} />
-                      </button>
+          {!isEditing && (
+            <div className="px-5 py-4 border-b border-gray-100">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">Select Sizes & Quantity</p>
+              <div className="grid grid-cols-2 gap-2">
+                {SIZES.map((s) => {
+                  const qty = sizeQtys[s] ?? 0;
+                  return (
+                    <div
+                      key={s}
+                      className={`flex items-center justify-between border rounded-lg px-3 py-2 transition-all ${
+                        qty > 0 ? 'border-violet-400 bg-violet-50' : 'border-gray-200'
+                      }`}
+                    >
+                      <span className="text-sm font-semibold w-8">{s}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setQty(s, -1)}
+                          disabled={qty === 0}
+                          className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-30"
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <span className="w-7 text-center text-sm font-semibold">{qty}</span>
+                        <button
+                          onClick={() => setQty(s, 1)}
+                          className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50"
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Tiered savings progress */}
           <div className="px-5 py-4 border-b border-gray-100">
@@ -679,15 +712,14 @@ function CheckoutOverlay({
             }`}
           >
             {added ? (
-              <><Check size={18} /> Added to Cart!</>
+              <><Check size={18} /> {isEditing ? 'Design Updated!' : 'Added to Cart!'}</>
             ) : (
-              <><ShoppingBag size={18} /> Add to Cart</>
+              <>{isEditing ? <><RefreshCw size={18} /> Update Design</> : <><ShoppingBag size={18} /> Add to Cart</>}</>
             )}
           </button>
           {!canAdd && (
             <p className="text-[11px] text-gray-400 text-center">
-              {!rightsChecked && totalQty === 0 ? 'Confirm rights & select sizes' :
-               !rightsChecked ? 'Please confirm design rights' : 'Select at least one size'}
+              {!rightsChecked ? 'Please confirm design rights' : 'Select at least one size'}
             </p>
           )}
           <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400">

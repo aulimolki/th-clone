@@ -1,4 +1,4 @@
-import { Star, Plus, Minus, X } from 'lucide-react';
+import { Star, Plus, Minus, X, Pencil } from 'lucide-react';
 import { useCart } from '../cart';
 
 export default function CartDrawer({ onNavigate }: { onNavigate: (path: string) => void }) {
@@ -110,12 +110,25 @@ export default function CartDrawer({ onNavigate }: { onNavigate: (path: string) 
                         ${((item.product?.price ?? 0) * item.quantity).toFixed(2)}
                       </span>
                     </div>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="text-xs text-gray-400 hover:text-black mt-2 underline"
-                    >
-                      Remove
-                    </button>
+                    <div className="flex items-center gap-3 mt-2">
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="text-xs text-gray-400 hover:text-black underline"
+                      >
+                        Remove
+                      </button>
+                      {item.design_data && item.product && (
+                        <button
+                          onClick={() => {
+                            closeCart();
+                            onNavigate(`#/customize/${item.product!.slug}/edit/${item.id}`);
+                          }}
+                          className="text-xs text-gray-400 hover:text-black underline flex items-center gap-1"
+                        >
+                          <Pencil size={11} /> Edit Design
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

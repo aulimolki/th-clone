@@ -13,7 +13,7 @@ type Route =
   | { name: 'home' }
   | { name: 'collection'; slug?: string }
   | { name: 'product'; slug: string }
-  | { name: 'customize'; slug: string }
+  | { name: 'customize'; slug: string; editItemId?: string }
   | { name: 'checkout' }
   | { name: 'search'; query: string }
   | { name: 'new' };
@@ -24,7 +24,10 @@ function parseHash(): Route {
   const productMatch = hash.match(/^\/product\/(.+)$/);
   if (productMatch) return { name: 'product', slug: productMatch[1] };
   const customizeMatch = hash.match(/^\/customize\/(.+)$/);
-  if (customizeMatch) return { name: 'customize', slug: customizeMatch[1] };
+  if (customizeMatch) {
+    const parts = customizeMatch[1].split('/edit/');
+    return { name: 'customize', slug: parts[0], editItemId: parts[1] };
+  }
   const collectionMatch = hash.match(/^\/collections\/(.+)$/);
   if (collectionMatch) return { name: 'collection', slug: collectionMatch[1] };
   const collectionAll = hash.match(/^\/collections$/);
@@ -65,7 +68,7 @@ export default function App() {
             <ProductPage slug={route.slug} onNavigate={navigate} />
           )}
           {route.name === 'customize' && (
-            <CustomizePage slug={route.slug} onNavigate={navigate} />
+            <CustomizePage slug={route.slug} onNavigate={navigate} editItemId={route.editItemId} />
           )}
           {route.name === 'checkout' && <CheckoutPage onNavigate={navigate} />}
           {route.name === 'new' && (
