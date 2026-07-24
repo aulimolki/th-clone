@@ -55,11 +55,17 @@ export default function App() {
     window.location.hash = path.replace(/^#/, '');
   };
 
+  const transparentOnTop =
+    route.name === 'home' ||
+    route.name === 'collection' ||
+    route.name === 'new' ||
+    route.name === 'search';
+
   return (
     <CartProvider>
       <div className="min-h-screen bg-white flex flex-col">
-        <Header onNavigate={navigate} />
-        <main className="flex-1">
+        <Header onNavigate={navigate} transparentOnTop={transparentOnTop} />
+        <main className={`flex-1 ${transparentOnTop ? '' : 'pt-[100px] lg:pt-[116px]'}`}>
           {route.name === 'home' && <HomePage onNavigate={navigate} />}
           {route.name === 'collection' && (
             <CollectionPage slug={route.slug} onNavigate={navigate} />
