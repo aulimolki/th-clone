@@ -338,22 +338,35 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
 
         <div className="relative max-w-lg w-full" onClick={() => setSelectedLayer(null)}>
           {/* T-shirt mockup */}
-          <div
-            className="relative w-full aspect-[5/6] rounded-sm overflow-hidden transition-colors duration-300 select-none"
-            style={{ backgroundColor: activeColor.hex }}
-          >
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="absolute inset-0 w-full h-full object-cover mix-blend-multiply pointer-events-none"
+          <div className="relative w-full aspect-square overflow-hidden select-none bg-white">
+            <div
+              className="absolute inset-0 transition-colors duration-300"
+              style={{
+                backgroundColor: activeColor.hex,
+                clipPath: 'polygon(37% 12%, 49% 17%, 57% 12%, 64% 18%, 92% 48%, 80% 59%, 75% 55%, 75% 93%, 25% 93%, 25% 55%, 20% 59%, 8% 48%, 36% 18%)',
+              }}
             />
-            {/* Print area */}
+            <img
+              src="/Front_Tee_Only.png"
+              alt="Front view of the selected t-shirt"
+              className="absolute inset-0 w-full h-full object-contain mix-blend-multiply pointer-events-none"
+            />
+            {/* 35cm × 40cm print canvas */}
             <div
               ref={printAreaRef}
-              className="absolute overflow-hidden"
-              style={{ top: '18%', left: '22%', right: '22%', bottom: '22%' }}
+              className="absolute overflow-hidden border border-dashed border-gray-400/80 bg-white/5"
+              style={{
+                top: '24%',
+                left: '28%',
+                width: '44%',
+                aspectRatio: '35 / 40',
+                maxHeight: '50.3%',
+              }}
               onClick={(e) => { e.stopPropagation(); }}
             >
+              <div className="absolute top-1 left-1 z-30 rounded bg-white/75 px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-gray-500 pointer-events-none">
+                35 × 40 cm
+              </div>
               {activeBg && (
                 <img src={activeBg.url} alt={activeBg.label} className="absolute inset-0 w-full h-full object-cover opacity-80 pointer-events-none" />
               )}
@@ -449,7 +462,7 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
 
           {/* Hint text */}
           <p className="text-center text-xs text-gray-400 mt-3">
-            Click a design element to select it. Drag to move. Use the corner handle to resize.
+            35 × 40 cm print area. Click an element to move or resize it.
           </p>
         </div>
       </div>
@@ -683,6 +696,8 @@ function DraggableLayer({
       style={{
         left: `${transform.x}%`,
         top: `${transform.y}%`,
+        width: layerId.startsWith('image-') ? '70%' : undefined,
+        height: layerId.startsWith('image-') ? '70%' : undefined,
         transform: `translate(-50%, -50%) scale(${transform.scale})`,
         zIndex,
         touchAction: 'none',
@@ -863,7 +878,14 @@ function CheckoutOverlay({
                 className="relative w-24 h-28 rounded-sm overflow-hidden flex-shrink-0 border border-gray-200"
                 style={{ backgroundColor: activeColorHex }}
               >
-                <img src={product.image_url} alt="" className="w-full h-full object-cover mix-blend-multiply" />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundColor: activeColorHex,
+                    clipPath: 'polygon(37% 12%, 49% 17%, 57% 12%, 64% 18%, 92% 48%, 80% 59%, 75% 55%, 75% 93%, 25% 93%, 25% 55%, 20% 59%, 8% 48%, 36% 18%)',
+                  }}
+                />
+                <img src="/Front_Tee_Only.png" alt="" className="absolute inset-0 w-full h-full object-contain mix-blend-multiply" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   {design.text1.value && (
                     <span
