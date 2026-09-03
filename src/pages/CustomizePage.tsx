@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   ArrowLeft,
   RefreshCw,
@@ -12,8 +12,10 @@ import {
   ShoppingBag,
   ShieldCheck,
   Minus,
+  GripVertical,
+  Maximize2,
 } from 'lucide-react';
-import { supabase, type Product, type PrintType, type DesignData } from '../supabase';
+import { supabase, type Product, type PrintType, type DesignData, type LayerTransform } from '../supabase';
 import { useCart } from '../cart';
 
 type Props = {
@@ -53,7 +55,7 @@ const FONT_COLORS = [
   { name: 'Sky',          hex: '#93c5fd' },
   { name: 'White',        hex: '#ffffff' },
   { name: 'Purple',       hex: '#7c3aed' },
-  { name: 'Pink',         hex: '#ec4899' },
+  { name: 'Pink',          hex: '#ec4899' },
   { name: 'Lime',         hex: '#84cc16' },
   { name: 'Forest',       hex: '#166534' },
   { name: 'Carmine Red',  hex: '#dc2626' },
@@ -110,7 +112,6 @@ const SIZE_CHART: { size: string; width: string; length: string }[] = [
   { size: '4XL', width: '32"',  length: '33"' },
 ];
 
-/* ── tiered pricing ── */
 const PRICE_TIERS = [
   { min: 1,  discount: 0,    label: '1-2 items' },
   { min: 3,  discount: 0.10, label: '3-5 items — 10% off' },
@@ -124,6 +125,8 @@ function getTier(quantity: number) {
   return tier;
 }
 
+const DEFAULT_TRANSFORM: LayerTransform = { x: 50, y: 50, scale: 1 };
+
 /* ─── state shape ────────────────────────────────────────────── */
 
 type TextOption = { value: string; font: string; color: string };
@@ -135,6 +138,11 @@ type DesignState = {
   text2: TextOption;
   sticker: string;
   background: string;
+  imageTransforms: LayerTransform[];
+  imageOrder: number[];
+  text1Transform: LayerTransform;
+  text2Transform: LayerTransform;
+  stickerTransform: LayerTransform;
 };
 
 const DEFAULT_STATE: DesignState = {
@@ -144,7 +152,16 @@ const DEFAULT_STATE: DesignState = {
   text2: { value: '', font: FONT_FAMILIES[7].value, color: FONT_COLORS[7].hex },
   sticker: '',
   background: '',
+  imageTransforms: [],
+  imageOrder: [],
+  text1Transform: { ...DEFAULT_TRANSFORM },
+  text2Transform: { ...DEFAULT_TRANSFORM },
+  stickerTransform: { ...DEFAULT_TRANSFORM },
 };
+
+/* Layer type for the preview area */
+type LayerKind = 'image' | 'text1' | 'text2' | 'sticker';
+type LayerId = string;
 
 /* ─── component ──────────────────────────────────────────────── */
 
@@ -155,7 +172,9 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
   const [history, setHistory] = useState<DesignState[]>([DEFAULT_STATE]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [step, setStep] = useState<'design' | 'checkout'>('design');
+  const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const printAreaRef = useRef<HTMLDivElement>(null);
   const { addToCart, items, updateItemDesign } = useCart();
   const isEditing = Boolean(editItemId);
 
@@ -185,6 +204,11 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
       text2: d.text2,
       sticker: d.sticker,
       background: d.background,
+      imageTransforms: d.imageTransforms ?? d.images.map(() => ({ ...DEFAULT_TRANSFORM })),
+      imageOrder: d.imageOrder ?? d.images.map((_, i) => i),
+      text1Transform: d.text1Transform ?? { ...DEFAULT_TRANSFORM },
+      text2Transform: d.text2Transform ?? { ...DEFAULT_TRANSFORM },
+      stickerTransform: d.stickerTransform ?? { ...DEFAULT_TRANSFORM },
     };
     setDesign(restored);
     setHistory([restored]);
@@ -192,12 +216,14 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
   }, [editItemId, items]);
 
   /* ── history helpers ── */
-  const pushHistory = (next: DesignState) => {
-    const trimmed = history.slice(0, historyIndex + 1);
-    setHistory([...trimmed, next]);
-    setHistoryIndex(trimmed.length);
+  const pushHistory = useCallback((next: DesignState) => {
+    setHistory((prev) => {
+      const trimmed = prev.slice(0, historyIndex + 1);
+      return [...trimmed, next];
+    });
+    setHistoryIndex((prev) => prev + 1);
     setDesign(next);
-  };
+  }, [historyIndex]);
 
   const undo = () => {
     if (historyIndex <= 0) return;
@@ -213,17 +239,24 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
     setDesign(history[idx]);
   };
 
-  const reset = () => pushHistory(DEFAULT_STATE);
+  const reset = () => {
+    setSelectedLayer(null);
+    pushHistory(DEFAULT_STATE);
+  };
   const update = (partial: Partial<DesignState>) => pushHistory({ ...design, ...partial });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    files.slice(0, 6 - design.images.length).forEach((file) => {
+    const slots = 6 - design.images.length;
+    files.slice(0, slots).forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {
         setDesign((prev) => {
-          const next = { ...prev, images: [...prev.images, reader.result as string] };
+          const newImages = [...prev.images, reader.result as string];
+          const newTransforms = [...prev.imageTransforms, { ...DEFAULT_TRANSFORM }];
+          const newOrder = [...prev.imageOrder, prev.images.length];
+          const next = { ...prev, images: newImages, imageTransforms: newTransforms, imageOrder: newOrder };
           pushHistory(next);
           return next;
         });
@@ -233,8 +266,44 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
     e.target.value = '';
   };
 
-  const removeImage = (idx: number) =>
-    update({ images: design.images.filter((_, i) => i !== idx) });
+  const removeImage = (idx: number) => {
+    const newImages = design.images.filter((_, i) => i !== idx);
+    const newTransforms = design.imageTransforms.filter((_, i) => i !== idx);
+    const newOrder = design.imageOrder
+      .filter((i) => i !== idx)
+      .map((i) => (i > idx ? i - 1 : i));
+    update({ images: newImages, imageTransforms: newTransforms, imageOrder: newOrder });
+    if (selectedLayer === `image-${idx}`) setSelectedLayer(null);
+  };
+
+  const reorderImages = (from: number, to: number) => {
+    const order = [...design.imageOrder];
+    const fromIdx = order.indexOf(from);
+    const toIdx = order.indexOf(to);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+    const [moved] = order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, moved);
+    update({ imageOrder: order });
+  };
+
+  const updateTransform = (layerId: string, transform: LayerTransform) => {
+    if (layerId.startsWith('image-')) {
+      const idx = parseInt(layerId.replace('image-', ''), 10);
+      const newTransforms = [...design.imageTransforms];
+      newTransforms[idx] = transform;
+      setDesign((prev) => ({ ...prev, imageTransforms: newTransforms }));
+    } else if (layerId === 'text1') {
+      setDesign((prev) => ({ ...prev, text1Transform: transform }));
+    } else if (layerId === 'text2') {
+      setDesign((prev) => ({ ...prev, text2Transform: transform }));
+    } else if (layerId === 'sticker') {
+      setDesign((prev) => ({ ...prev, stickerTransform: transform }));
+    }
+  };
+
+  const commitTransform = () => {
+    pushHistory(design);
+  };
 
   const activeColor = TEE_COLORS.find((c) => c.name === design.color) ?? TEE_COLORS[0];
   const activeBg = BACKGROUNDS.find((b) => b.label === design.background);
@@ -258,7 +327,7 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f4f4f4]">
-      {/* ── LEFT: tee preview ── */}
+      {/* ── LEFT: tee mockup preview ── */}
       <div className="flex-1 relative flex items-center justify-center overflow-hidden p-8">
         <button
           onClick={() => onNavigate(`#/product/${slug}`)}
@@ -267,47 +336,121 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div className="relative max-w-lg w-full">
+        <div className="relative max-w-lg w-full" onClick={() => setSelectedLayer(null)}>
+          {/* T-shirt mockup */}
           <div
-            className="relative w-full aspect-[5/6] rounded-sm overflow-hidden transition-colors duration-300"
+            className="relative w-full aspect-[5/6] rounded-sm overflow-hidden transition-colors duration-300 select-none"
             style={{ backgroundColor: activeColor.hex }}
           >
             <img
               src={product.image_url}
               alt={product.name}
-              className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
+              className="absolute inset-0 w-full h-full object-cover mix-blend-multiply pointer-events-none"
             />
+            {/* Print area */}
             <div
-              className="absolute border-2 border-dashed border-gray-400/70 overflow-hidden"
+              ref={printAreaRef}
+              className="absolute overflow-hidden"
               style={{ top: '18%', left: '22%', right: '22%', bottom: '22%' }}
+              onClick={(e) => { e.stopPropagation(); }}
             >
               {activeBg && (
-                <img src={activeBg.url} alt={activeBg.label} className="absolute inset-0 w-full h-full object-cover opacity-80" />
+                <img src={activeBg.url} alt={activeBg.label} className="absolute inset-0 w-full h-full object-cover opacity-80 pointer-events-none" />
               )}
-              {design.images[0] && (
-                <img src={design.images[0]} alt="Custom" className="absolute inset-0 w-full h-full object-contain p-2" />
-              )}
-              {design.sticker && (
-                <div className="absolute top-2 right-2 text-4xl leading-none select-none">{design.sticker}</div>
-              )}
+
+              {/* Render image layers in z-order */}
+              {design.imageOrder.map((imgIdx, z) => {
+                const src = design.images[imgIdx];
+                if (!src) return null;
+                const transform = design.imageTransforms[imgIdx] ?? DEFAULT_TRANSFORM;
+                return (
+                  <DraggableLayer
+                    key={`image-${imgIdx}`}
+                    layerId={`image-${imgIdx}`}
+                    transform={transform}
+                    selected={selectedLayer === `image-${imgIdx}`}
+                    onSelect={(id) => setSelectedLayer(id)}
+                    onTransformChange={updateTransform}
+                    onCommit={commitTransform}
+                    printAreaRef={printAreaRef}
+                    zIndex={z + 1}
+                  >
+                    <img
+                      src={src}
+                      alt="Custom"
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
+                    />
+                  </DraggableLayer>
+                );
+              })}
+
+              {/* Text 1 layer */}
               {design.text1.value && (
-                <div
-                  className="absolute top-2 left-0 right-0 text-center px-2 font-bold text-2xl leading-tight"
-                  style={{ fontFamily: design.text1.font, color: design.text1.color }}
+                <DraggableLayer
+                  layerId="text1"
+                  transform={design.text1Transform}
+                  selected={selectedLayer === 'text1'}
+                  onSelect={(id) => setSelectedLayer(id)}
+                  onTransformChange={updateTransform}
+                  onCommit={commitTransform}
+                  printAreaRef={printAreaRef}
+                  zIndex={10}
                 >
-                  {design.text1.value}
-                </div>
+                  <span
+                    className="font-bold text-2xl leading-tight whitespace-nowrap pointer-events-none text-center block"
+                    style={{ fontFamily: design.text1.font, color: design.text1.color }}
+                  >
+                    {design.text1.value}
+                  </span>
+                </DraggableLayer>
               )}
+
+              {/* Text 2 layer */}
               {design.text2.value && (
-                <div
-                  className="absolute bottom-2 left-0 right-0 text-center px-2 font-bold text-xl leading-tight"
-                  style={{ fontFamily: design.text2.font, color: design.text2.color }}
+                <DraggableLayer
+                  layerId="text2"
+                  transform={design.text2Transform}
+                  selected={selectedLayer === 'text2'}
+                  onSelect={(id) => setSelectedLayer(id)}
+                  onTransformChange={updateTransform}
+                  onCommit={commitTransform}
+                  printAreaRef={printAreaRef}
+                  zIndex={11}
                 >
-                  {design.text2.value}
-                </div>
+                  <span
+                    className="font-bold text-xl leading-tight whitespace-nowrap pointer-events-none text-center block"
+                    style={{ fontFamily: design.text2.font, color: design.text2.color }}
+                  >
+                    {design.text2.value}
+                  </span>
+                </DraggableLayer>
+              )}
+
+              {/* Sticker layer */}
+              {design.sticker && (
+                <DraggableLayer
+                  layerId="sticker"
+                  transform={design.stickerTransform}
+                  selected={selectedLayer === 'sticker'}
+                  onSelect={(id) => setSelectedLayer(id)}
+                  onTransformChange={updateTransform}
+                  onCommit={commitTransform}
+                  printAreaRef={printAreaRef}
+                  zIndex={12}
+                >
+                  <span className="text-4xl leading-none select-none pointer-events-none block">
+                    {design.sticker}
+                  </span>
+                </DraggableLayer>
               )}
             </div>
           </div>
+
+          {/* Hint text */}
+          <p className="text-center text-xs text-gray-400 mt-3">
+            Click a design element to select it. Drag to move. Use the corner handle to resize.
+          </p>
         </div>
       </div>
 
@@ -323,7 +466,7 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
 
         {/* Scrollable sections */}
         <div className="flex-1 overflow-y-auto">
-          {/* ── Colour — small circles ── */}
+          {/* ── Colour ── */}
           <Section title="Colour">
             <div className="flex flex-wrap gap-3">
               {TEE_COLORS.map((c) => (
@@ -343,19 +486,28 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
             <p className="text-xs text-gray-500 mt-2">Selected: <span className="font-medium text-gray-700">{design.color}</span></p>
           </Section>
 
-          {/* ── Upload Images ── */}
+          {/* ── Upload Images (draggable list) ── */}
           <Section title="Upload Your Images" badge={`${design.images.length}/6`}>
+            <p className="text-[11px] text-gray-400 mb-2">Drag thumbnails to reorder layers (top = front)</p>
             <div className="flex flex-wrap gap-2 mb-3">
-              {design.images.map((src, i) => (
-                <div key={i} className="relative w-14 h-14">
-                  <img src={src} className="w-full h-full object-cover rounded border border-gray-200" alt="" />
-                  <button
-                    onClick={() => removeImage(i)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-700 text-white rounded-full flex items-center justify-center"
-                  >
-                    <Trash2 size={10} />
-                  </button>
-                </div>
+              {design.imageOrder.map((imgIdx, displayPos) => (
+                <DraggableImageThumb
+                  key={imgIdx}
+                  src={design.images[imgIdx]}
+                  position={displayPos}
+                  onReorder={(from, to) => {
+                    const fromIdx = design.imageOrder.indexOf(from);
+                    const toIdx = design.imageOrder.indexOf(to);
+                    if (fromIdx === -1 || toIdx === -1) return;
+                    const order = [...design.imageOrder];
+                    const [moved] = order.splice(fromIdx, 1);
+                    order.splice(toIdx, 0, moved);
+                    update({ imageOrder: order });
+                  }}
+                  onRemove={() => removeImage(imgIdx)}
+                  onSelect={() => setSelectedLayer(`image-${imgIdx}`)}
+                  isSelected={selectedLayer === `image-${imgIdx}`}
+                />
               ))}
               {design.images.length < 6 && (
                 <button
@@ -456,6 +608,167 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
   );
 }
 
+/* ─── DraggableLayer ─────────────────────────────────────────── */
+
+function DraggableLayer({
+  layerId,
+  transform,
+  selected,
+  onSelect,
+  onTransformChange,
+  onCommit,
+  printAreaRef,
+  zIndex,
+  children,
+}: {
+  layerId: string;
+  transform: LayerTransform;
+  selected: boolean;
+  onSelect: (id: string) => void;
+  onTransformChange: (id: string, t: LayerTransform) => void;
+  onCommit: () => void;
+  printAreaRef: React.RefObject<HTMLDivElement | null>;
+  zIndex: number;
+  children: React.ReactNode;
+}) {
+  const layerRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const resizeState = useRef<{ startX: number; origScale: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onSelect(layerId);
+    dragState.current = { startX: e.clientX, startY: e.clientY, origX: transform.x, origY: transform.y };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (dragState.current) {
+      const area = printAreaRef.current;
+      if (!area) return;
+      const rect = area.getBoundingClientRect();
+      const dx = ((e.clientX - dragState.current.startX) / rect.width) * 100;
+      const dy = ((e.clientY - dragState.current.startY) / rect.height) * 100;
+      const x = Math.max(0, Math.min(100, dragState.current.origX + dx));
+      const y = Math.max(0, Math.min(100, dragState.current.origY + dy));
+      onTransformChange(layerId, { ...transform, x, y });
+    } else if (resizeState.current) {
+      const dx = e.clientX - resizeState.current.startX;
+      const newScale = Math.max(0.2, Math.min(4, resizeState.current.origScale + dx * 0.01));
+      onTransformChange(layerId, { ...transform, scale: newScale });
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (dragState.current || resizeState.current) {
+      onCommit();
+    }
+    dragState.current = null;
+    resizeState.current = null;
+    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+  };
+
+  const handleResizeDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    resizeState.current = { startX: e.clientX, origScale: transform.scale };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  return (
+    <div
+      ref={layerRef}
+      className="absolute cursor-move"
+      style={{
+        left: `${transform.x}%`,
+        top: `${transform.y}%`,
+        transform: `translate(-50%, -50%) scale(${transform.scale})`,
+        zIndex,
+        touchAction: 'none',
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      <div className={`relative ${selected ? 'outline-2 outline outline-violet-500' : ''}`}>
+        {children}
+        {selected && (
+          <div
+            className="absolute -bottom-2 -right-2 w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center cursor-nwse-resize border-2 border-white shadow-md"
+            onPointerDown={handleResizeDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            style={{ touchAction: 'none' }}
+          >
+            <Maximize2 size={10} className="text-white" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── DraggableImageThumb ────────────────────────────────────── */
+
+function DraggableImageThumb({
+  src,
+  position,
+  onReorder,
+  onRemove,
+  onSelect,
+  isSelected,
+}: {
+  src: string;
+  position: number;
+  onReorder: (from: number, to: number) => void;
+  onRemove: () => void;
+  onSelect: () => void;
+  isSelected: boolean;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const dragOverRef = useRef(false);
+
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        setIsDragging(true);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', String(position));
+      }}
+      onDragEnd={() => setIsDragging(false)}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        dragOverRef.current = true;
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (!isNaN(from) && from !== position) {
+          onReorder(from, position);
+        }
+      }}
+      onClick={onSelect}
+      className={`relative w-14 h-14 cursor-grab active:cursor-grabbing transition-opacity ${
+        isDragging ? 'opacity-40' : 'opacity-100'
+      } ${isSelected ? 'ring-2 ring-violet-500 rounded' : ''}`}
+    >
+      <img src={src} className="w-full h-full object-cover rounded border border-gray-200" alt="" draggable={false} />
+      <div className="absolute top-0 left-0 bg-black/60 text-white text-[8px] px-1 rounded-br leading-tight">
+        {position + 1}
+      </div>
+      <button
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-700 text-white rounded-full flex items-center justify-center"
+      >
+        <Trash2 size={10} />
+      </button>
+    </div>
+  );
+}
+
 /* ─── checkout overlay ───────────────────────────────────────── */
 
 function CheckoutOverlay({
@@ -507,6 +820,11 @@ function CheckoutOverlay({
       text2: design.text2,
       sticker: design.sticker,
       background: design.background,
+      imageTransforms: design.imageTransforms,
+      imageOrder: design.imageOrder,
+      text1Transform: design.text1Transform,
+      text2Transform: design.text2Transform,
+      stickerTransform: design.stickerTransform,
     };
     if (isEditing && editItemId) {
       await updateItemDesign(editItemId, design.color, designData);

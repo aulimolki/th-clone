@@ -35,6 +35,12 @@ export type Product = {
 
 export type PrintType = 'DTG' | 'DTF';
 
+export type LayerTransform = {
+  x: number;
+  y: number;
+  scale: number;
+};
+
 export type DesignData = {
   color: string;
   images: string[];
@@ -42,6 +48,11 @@ export type DesignData = {
   text2: { value: string; font: string; color: string };
   sticker: string;
   background: string;
+  imageTransforms?: LayerTransform[];
+  imageOrder?: number[];
+  text1Transform?: LayerTransform;
+  text2Transform?: LayerTransform;
+  stickerTransform?: LayerTransform;
 };
 
 export type CartItem = {
