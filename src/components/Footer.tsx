@@ -63,7 +63,7 @@ export default function Footer({ onNavigate }: Props) {
               <img
                 src="/CCC_LOGOTYPE_BLACK.png"
                 alt="Cool Clothing Company"
-                className="h-14 w-48 object-cover invert"
+                className="h-10 w-36 object-cover invert"
               />
             </button>
             <p className="text-white/60 text-sm mb-4 max-w-xs">
