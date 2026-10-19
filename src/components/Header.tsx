@@ -111,9 +111,9 @@ export default function Header({
               className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0"
             >
               <img
-                src="/27508dc2-94dc-4575-adeb-050fb25d2db9 copy.jpeg"
+                src="/CCC_LOGOTYPE_BLACK.png"
                 alt="Cool Clothing Company"
-                className="h-10 lg:h-12 w-auto object-contain transition-all duration-[350ms] ease"
+                className="h-10 w-36 lg:h-12 lg:w-44 object-cover transition-all duration-[350ms] ease"
                 style={{ filter: logoFilter }}
               />
             </button>
@@ -237,7 +237,7 @@ export default function Header({
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-[85%] max-w-sm bg-white overflow-y-auto animate-slideInLeft">
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <img src="/27508dc2-94dc-4575-adeb-050fb25d2db9 copy.jpeg" alt="Cool Clothing Company" className="h-8 w-auto object-contain" />
+              <img src="/CCC_LOGOTYPE_BLACK.png" alt="Cool Clothing Company" className="h-8 w-32 object-cover" />
               <button onClick={() => setMobileOpen(false)} className="p-2">
                 <X size={22} />
               </button>

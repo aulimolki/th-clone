@@ -12,7 +12,6 @@ import {
   ShoppingBag,
   ShieldCheck,
   Minus,
-  GripVertical,
   Maximize2,
 } from 'lucide-react';
 import { supabase, type Product, type PrintType, type DesignData, type LayerTransform } from '../supabase';
@@ -101,17 +100,6 @@ const BACKGROUNDS = [
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
 
-const SIZE_CHART: { size: string; width: string; length: string }[] = [
-  { size: 'XS',  width: '18"',  length: '26"' },
-  { size: 'S',   width: '20"',  length: '27"' },
-  { size: 'M',   width: '22"',  length: '28"' },
-  { size: 'L',   width: '24"',  length: '29"' },
-  { size: 'XL',  width: '26"',  length: '30"' },
-  { size: '2XL', width: '28"',  length: '31"' },
-  { size: '3XL', width: '30"',  length: '32"' },
-  { size: '4XL', width: '32"',  length: '33"' },
-];
-
 const PRICE_TIERS = [
   { min: 1,  discount: 0,    label: '1-2 items' },
   { min: 3,  discount: 0.10, label: '3-5 items — 10% off' },
@@ -159,8 +147,6 @@ const DEFAULT_STATE: DesignState = {
   stickerTransform: { ...DEFAULT_TRANSFORM },
 };
 
-/* Layer type for the preview area */
-type LayerKind = 'image' | 'text1' | 'text2' | 'sticker';
 type LayerId = string;
 
 /* ─── component ──────────────────────────────────────────────── */
@@ -176,8 +162,6 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const printAreaRef = useRef<HTMLDivElement>(null);
   const { addToCart, items, updateItemDesign } = useCart();
-  const isEditing = Boolean(editItemId);
-
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -274,16 +258,6 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
       .map((i) => (i > idx ? i - 1 : i));
     update({ images: newImages, imageTransforms: newTransforms, imageOrder: newOrder });
     if (selectedLayer === `image-${idx}`) setSelectedLayer(null);
-  };
-
-  const reorderImages = (from: number, to: number) => {
-    const order = [...design.imageOrder];
-    const fromIdx = order.indexOf(from);
-    const toIdx = order.indexOf(to);
-    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
-    const [moved] = order.splice(fromIdx, 1);
-    order.splice(toIdx, 0, moved);
-    update({ imageOrder: order });
   };
 
   const updateTransform = (layerId: string, transform: LayerTransform) => {
@@ -609,7 +583,6 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
           product={product}
           design={design}
           activeColorHex={activeColor.hex}
-          activeBg={activeBg}
           onClose={() => setStep('design')}
           onNavigate={onNavigate}
           addToCart={addToCart}
@@ -790,7 +763,6 @@ function CheckoutOverlay({
   product,
   design,
   activeColorHex,
-  activeBg,
   onClose,
   onNavigate,
   addToCart,
@@ -800,7 +772,6 @@ function CheckoutOverlay({
   product: Product;
   design: DesignState;
   activeColorHex: string;
-  activeBg: { label: string; url: string } | undefined;
   onClose: () => void;
   onNavigate: (path: string) => void;
   addToCart: (product: Product, size: string, quantity: number, printType: PrintType, color?: string, designData?: DesignData) => Promise<void>;

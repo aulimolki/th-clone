@@ -7,9 +7,7 @@ import {
   ChevronRight,
   Wallet,
   Landmark,
-  Smartphone,
   Building2,
-  CreditCard,
   QrCode,
   Loader2,
 } from 'lucide-react';
