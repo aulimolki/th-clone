@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Search, ShoppingBag, Menu, X, ChevronDown, User } from 'lucide-react';
 import { useCart } from '../cart';
+import { useAuth } from '../auth';
+import ProfileMenu from './ProfileMenu';
+import AuthModal from './AuthModal';
 
 type NavItem = {
   label: string;
@@ -49,10 +52,12 @@ export default function Header({
   transparentOnTop?: boolean;
 }) {
   const { itemCount, openCart } = useCart();
+  const { user, loading: authLoading } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -149,6 +154,18 @@ export default function Header({
               <button
                 className={`p-2 hover:opacity-60 transition-opacity hidden lg:block ${textColor}`}
                 aria-label="Account"
+                onClick={() => (user ? undefined : setAuthOpen(true))}
+              >
+                {user && !authLoading ? (
+                  <ProfileMenu onNavigate={navigate} />
+                ) : (
+                  <User size={20} />
+                )}
+              </button>
+              <button
+                className={`p-2 hover:opacity-60 transition-opacity lg:hidden ${textColor}`}
+                aria-label="Account"
+                onClick={() => (user ? onNavigate('#/account/profile') : setAuthOpen(true))}
               >
                 <User size={20} />
               </button>
@@ -252,10 +269,46 @@ export default function Header({
                   {item.label}
                 </button>
               ))}
+              <div className="pt-3">
+                {user ? (
+                  <>
+                    <button
+                      onClick={() => navigate('#/account/orders')}
+                      className="block w-full text-left py-3 text-base font-medium border-b border-gray-50"
+                    >
+                      My Orders
+                    </button>
+                    <button
+                      onClick={() => navigate('#/account/wishlist')}
+                      className="block w-full text-left py-3 text-base font-medium border-b border-gray-50"
+                    >
+                      Wishlist
+                    </button>
+                    <button
+                      onClick={() => navigate('#/account/profile')}
+                      className="block w-full text-left py-3 text-base font-medium border-b border-gray-50"
+                    >
+                      Profile
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      setAuthOpen(true);
+                    }}
+                    className="block w-full text-left py-3 text-base font-medium uppercase tracking-wide border-b border-gray-50"
+                  >
+                    Sign In / Sign Up
+                  </button>
+                )}
+              </div>
             </nav>
           </div>
         </div>
       )}
+      {/* Auth modal */}
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     </>
   );
 }
