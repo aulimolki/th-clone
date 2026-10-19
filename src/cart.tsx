@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import { supabase, type Product, type CartItem, type PrintType, type DesignData } from './supabase';
+import { supabase, type Product, type CartItem, type PrintType, type DesignData, type MaterialType } from './supabase';
 
 type CartContextValue = {
   items: CartItem[];
@@ -7,7 +7,7 @@ type CartContextValue = {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addToCart: (product: Product, size: string, quantity?: number, printType?: PrintType, color?: string, designData?: DesignData) => Promise<void>;
+  addToCart: (product: Product, size: string, quantity?: number, printType?: PrintType, color?: string, designData?: DesignData, materialType?: MaterialType) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   updateItemDesign: (id: string, color: string, designData: DesignData) => Promise<void>;
@@ -39,12 +39,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [fetchCart]);
 
   const addToCart = useCallback(
-    async (product: Product, size: string, quantity = 1, printType: PrintType = 'DTG', color?: string, designData?: DesignData) => {
+    async (product: Product, size: string, quantity = 1, printType: PrintType = 'DTG', color?: string, designData?: DesignData, materialType?: MaterialType) => {
       const existing = items.find(
         (item) =>
           item.product_id === product.id &&
           item.size === size &&
           (item.print_type ?? 'DTG') === printType &&
+          (item.material_type ?? null) === (materialType ?? designData?.materialType ?? null) &&
           (item.color ?? null) === (color ?? null),
       );
       if (existing) {
@@ -60,6 +61,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             size,
             quantity,
             print_type: printType,
+            material_type: materialType ?? designData?.materialType ?? null,
             color: color ?? null,
             design_data: designData ?? null,
           });
@@ -94,7 +96,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     async (id: string, color: string, designData: DesignData) => {
       await supabase
         .from('cart_items')
-        .update({ color, design_data: designData })
+        .update({ color, material_type: designData.materialType ?? null, design_data: designData })
         .eq('id', id);
       await fetchCart();
     },

@@ -14,7 +14,7 @@ import {
   Minus,
   Maximize2,
 } from 'lucide-react';
-import { supabase, type Product, type PrintType, type DesignData, type LayerTransform } from '../supabase';
+import { supabase, type Product, type PrintType, type MaterialType, type DesignData, type LayerTransform } from '../supabase';
 import { useCart } from '../cart';
 
 type Props = {
@@ -35,6 +35,21 @@ const TEE_COLORS = [
   { name: 'Lavender',  hex: '#c4b5d0' },
   { name: 'Blue',      hex: '#7db3d8' },
   { name: 'Olive',     hex: '#6b6b3a' },
+];
+
+const MATERIAL_OPTIONS: { value: MaterialType; name: string; spec: string; description: string }[] = [
+  {
+    value: 'Premium Heavyweight',
+    name: 'Premium Heavyweight',
+    spec: '240–280 GSM | 100% Cotton',
+    description: 'Thick, structured, and durable cotton designed for a premium feel. Perfect for oversized fits and elevated streetwear.',
+  },
+  {
+    value: 'Standard',
+    name: 'Standard',
+    spec: '24s Cotton | Approx. 170–200 GSM',
+    description: 'Soft, breathable, and comfortable cotton made for everyday wear at an accessible price.',
+  },
 ];
 
 const FONT_FAMILIES = [
@@ -131,6 +146,7 @@ type DesignState = {
   text1Transform: LayerTransform;
   text2Transform: LayerTransform;
   stickerTransform: LayerTransform;
+  materialType: MaterialType;
 };
 
 const DEFAULT_STATE: DesignState = {
@@ -145,6 +161,7 @@ const DEFAULT_STATE: DesignState = {
   text1Transform: { ...DEFAULT_TRANSFORM },
   text2Transform: { ...DEFAULT_TRANSFORM },
   stickerTransform: { ...DEFAULT_TRANSFORM },
+  materialType: 'Premium Heavyweight',
 };
 
 type LayerId = string;
@@ -193,6 +210,7 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
       text1Transform: d.text1Transform ?? { ...DEFAULT_TRANSFORM },
       text2Transform: d.text2Transform ?? { ...DEFAULT_TRANSFORM },
       stickerTransform: d.stickerTransform ?? { ...DEFAULT_TRANSFORM },
+      materialType: d.materialType ?? 'Premium Heavyweight',
     };
     setDesign(restored);
     setHistory([restored]);
@@ -774,12 +792,13 @@ function CheckoutOverlay({
   activeColorHex: string;
   onClose: () => void;
   onNavigate: (path: string) => void;
-  addToCart: (product: Product, size: string, quantity: number, printType: PrintType, color?: string, designData?: DesignData) => Promise<void>;
+  addToCart: (product: Product, size: string, quantity: number, printType: PrintType, color?: string, designData?: DesignData, materialType?: MaterialType) => Promise<void>;
   editItemId?: string;
   updateItemDesign: (id: string, color: string, designData: DesignData) => Promise<void>;
 }) {
   const isEditing = Boolean(editItemId);
   const [rightsChecked, setRightsChecked] = useState(false);
+  const [materialType, setMaterialType] = useState<MaterialType>(design.materialType ?? 'Premium Heavyweight');
   const [printType, setPrintType] = useState<PrintType>('DTG');
   const [sizeQtys, setSizeQtys] = useState<Record<string, number>>({});
   const [added, setAdded] = useState(false);
@@ -811,12 +830,13 @@ function CheckoutOverlay({
       text1Transform: design.text1Transform,
       text2Transform: design.text2Transform,
       stickerTransform: design.stickerTransform,
+      materialType,
     };
     if (isEditing && editItemId) {
       await updateItemDesign(editItemId, design.color, designData);
     } else {
       for (const [size, qty] of Object.entries(sizeQtys)) {
-        if (qty > 0) await addToCart(product, size, qty, printType, design.color, designData);
+        if (qty > 0) await addToCart(product, size, qty, printType, design.color, designData, materialType);
       }
     }
     setAdded(true);
@@ -872,12 +892,40 @@ function CheckoutOverlay({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{product.name}</p>
                 <p className="text-xs text-gray-500 mt-0.5">Color: {design.color}</p>
+                <p className="text-xs text-gray-500">Material: {materialType}</p>
                 <p className="text-xs text-gray-500">Print: {printType}</p>
                 {design.text1.value && <p className="text-xs text-gray-500 truncate">Text: {design.text1.value}</p>}
                 {design.text2.value && <p className="text-xs text-gray-500 truncate">Text 2: {design.text2.value}</p>}
                 {design.sticker && <p className="text-xs text-gray-500">Sticker: {design.sticker}</p>}
                 {design.images.length > 0 && <p className="text-xs text-gray-500">{design.images.length} image(s)</p>}
               </div>
+            </div>
+          </div>
+
+          {/* Material type */}
+          <div className="px-5 py-4 border-b border-gray-100">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-700 mb-3">Material Type</p>
+            <div className="space-y-2">
+              {MATERIAL_OPTIONS.map((material) => (
+                <button
+                  key={material.value}
+                  onClick={() => setMaterialType(material.value)}
+                  className={`w-full text-left border rounded p-3 transition-all ${
+                    materialType === material.value
+                      ? 'border-violet-500 bg-violet-50 ring-1 ring-violet-300'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-bold text-gray-900">{material.name}</div>
+                      <div className="text-[11px] font-semibold text-gray-600 mt-1">{material.spec}</div>
+                    </div>
+                    <span className={`mt-0.5 h-4 w-4 rounded-full border flex-shrink-0 ${materialType === material.value ? 'border-violet-600 bg-violet-600 ring-2 ring-violet-200' : 'border-gray-300'}`} />
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-gray-500 mt-2">{material.description}</p>
+                </button>
+              ))}
             </div>
           </div>
 

@@ -34,6 +34,7 @@ export type Product = {
 };
 
 export type PrintType = 'DTG' | 'DTF';
+export type MaterialType = 'Premium Heavyweight' | 'Standard';
 
 export type LayerTransform = {
   x: number;
@@ -53,6 +54,7 @@ export type DesignData = {
   text1Transform?: LayerTransform;
   text2Transform?: LayerTransform;
   stickerTransform?: LayerTransform;
+  materialType?: MaterialType;
 };
 
 export type CartItem = {
@@ -61,6 +63,7 @@ export type CartItem = {
   size: string;
   quantity: number;
   print_type: PrintType | null;
+  material_type: MaterialType | null;
   color: string | null;
   design_data: DesignData | null;
   created_at: string;

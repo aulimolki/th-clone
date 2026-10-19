@@ -76,6 +76,9 @@ export default function CartDrawer({ onNavigate }: { onNavigate: (path: string) 
                     {item.color && (
                       <p className="text-xs text-gray-500 mt-0.5">Color: {item.color}</p>
                     )}
+                    {item.material_type && (
+                      <p className="text-xs text-gray-500 mt-0.5">Material: {item.material_type}</p>
+                    )}
                     {item.print_type && (
                       <p className="text-xs text-gray-500 mt-0.5">Print: {item.print_type}</p>
                     )}
