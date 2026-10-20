@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Star, Truck, RefreshCw, Globe, ChevronRight, Sparkles, Pencil, CheckCircle2, ThumbsUp, ThumbsDown, Play, ChevronDown } from 'lucide-react';
-import { supabase, type Product, type PrintType } from '../supabase';
+import { supabase, type Product, type PrintType, type MaterialType } from '../supabase';
 import ProductCard from '../components/ProductCard';
 
 type Props = {
@@ -18,12 +18,28 @@ const TEE_COLORS = [
   { name: 'Green', hex: '#1f8a4c' },
 ];
 
+const MATERIAL_OPTIONS: { value: MaterialType; name: string; spec: string; description: string }[] = [
+  {
+    value: 'Premium Heavyweight',
+    name: 'Premium Heavyweight',
+    spec: '240–280 GSM | 100% Cotton',
+    description: 'Thick, structured, and durable cotton designed for a premium feel. Perfect for oversized fits and elevated streetwear.',
+  },
+  {
+    value: 'Standard',
+    name: 'Standard',
+    spec: '24s Cotton | Approx. 170–200 GSM',
+    description: 'Soft, breathable, and comfortable cotton made for everyday wear at an accessible price.',
+  },
+];
+
 export default function ProductPage({ slug, onNavigate }: Props) {
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
   const [printType, setPrintType] = useState<PrintType>('DTG');
+  const [materialType, setMaterialType] = useState<MaterialType>('Premium Heavyweight');
   const [color, setColor] = useState('White');
 
   useEffect(() => {
@@ -52,7 +68,7 @@ export default function ProductPage({ slug, onNavigate }: Props) {
   }, [slug]);
 
   const handleCustomize = () => {
-    onNavigate(`#/customize/${slug}`);
+    onNavigate(`#/customize/${slug}?material=${encodeURIComponent(materialType)}`);
   };
 
   if (loading) {
@@ -149,6 +165,26 @@ export default function ProductPage({ slug, onNavigate }: Props) {
             </div>
 
             <p className="text-gray-600 leading-relaxed mb-6">{product.description}</p>
+
+            {/* Material type selector */}
+            <div className="mb-6">
+              <span className="text-sm font-bold uppercase tracking-wide mb-2 block">Material Type</span>
+              <div className="grid grid-cols-2 gap-2">
+                {MATERIAL_OPTIONS.map((m) => (
+                  <button
+                    key={m.value}
+                    onClick={() => setMaterialType(m.value)}
+                    className={`py-3 text-sm font-medium border transition-all ${materialType === m.value ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'}`}
+                  >
+                    <div className="font-bold">{m.name}</div>
+                    <div className="text-[10px] font-normal opacity-80 mt-0.5">{m.spec}</div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                {MATERIAL_OPTIONS.find((m) => m.value === materialType)?.description}
+              </p>
+            </div>
 
             {/* Print type selector */}
             <div className="mb-6">

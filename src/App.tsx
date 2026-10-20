@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import CollectionPage from './pages/CollectionPage';
 import ProductPage from './pages/ProductPage';
 import CustomizePage from './pages/CustomizePage';
+import type { MaterialType } from './supabase';
 import CheckoutPage from './pages/CheckoutPage';
 import OrdersPage from './pages/OrdersPage';
 import WishlistPage from './pages/WishlistPage';
@@ -17,7 +18,7 @@ type Route =
   | { name: 'home' }
   | { name: 'collection'; slug?: string }
   | { name: 'product'; slug: string }
-  | { name: 'customize'; slug: string; editItemId?: string }
+  | { name: 'customize'; slug: string; editItemId?: string; material?: string }
   | { name: 'checkout' }
   | { name: 'search'; query: string }
   | { name: 'new' }
@@ -32,8 +33,17 @@ function parseHash(): Route {
   if (productMatch) return { name: 'product', slug: productMatch[1] };
   const customizeMatch = hash.match(/^\/customize\/(.+)$/);
   if (customizeMatch) {
-    const parts = customizeMatch[1].split('/edit/');
-    return { name: 'customize', slug: parts[0], editItemId: parts[1] };
+    const raw = customizeMatch[1];
+    let material: string | undefined;
+    let rest = raw;
+    const qIdx = raw.indexOf('?');
+    if (qIdx !== -1) {
+      rest = raw.slice(0, qIdx);
+      const params = new URLSearchParams(raw.slice(qIdx + 1));
+      material = params.get('material') ?? undefined;
+    }
+    const parts = rest.split('/edit/');
+    return { name: 'customize', slug: parts[0], editItemId: parts[1], material };
   }
   const collectionMatch = hash.match(/^\/collections\/(.+)$/);
   if (collectionMatch) return { name: 'collection', slug: collectionMatch[1] };
@@ -86,7 +96,12 @@ export default function App() {
               <ProductPage slug={route.slug} onNavigate={navigate} />
             )}
             {route.name === 'customize' && (
-              <CustomizePage slug={route.slug} onNavigate={navigate} editItemId={route.editItemId} />
+              <CustomizePage
+                slug={route.slug}
+                onNavigate={navigate}
+                editItemId={route.editItemId}
+                initialMaterial={route.material as MaterialType | undefined}
+              />
             )}
             {route.name === 'checkout' && <CheckoutPage onNavigate={navigate} />}
             {route.name === 'orders' && <OrdersPage onNavigate={navigate} />}
