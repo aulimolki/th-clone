@@ -174,7 +174,7 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
   const [design, setDesign] = useState<DesignState>(DEFAULT_STATE);
   const [history, setHistory] = useState<DesignState[]>([DEFAULT_STATE]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const [step, setStep] = useState<'design' | 'checkout'>('design');
+  const [step, setStep] = useState<'material' | 'design' | 'checkout'>('material');
   const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const printAreaRef = useRef<HTMLDivElement>(null);
@@ -215,6 +215,7 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
     setDesign(restored);
     setHistory([restored]);
     setHistoryIndex(0);
+    setStep('design');
   }, [editItemId, items]);
 
   /* ── history helpers ── */
@@ -313,6 +314,65 @@ export default function CustomizePage({ slug, onNavigate, editItemId }: Props) {
       <div className="h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-gray-500">Product not found.</p>
         <button onClick={() => onNavigate('#/')} className="underline font-medium">Back to home</button>
+      </div>
+    );
+  }
+
+  /* ── Material selection step ── */
+  if (step === 'material') {
+    return (
+      <div className="min-h-screen bg-[#f4f4f4] py-10 px-4">
+        <div className="max-w-3xl mx-auto">
+          <button
+            onClick={() => onNavigate(`#/product/${slug}`)}
+            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-black mb-5"
+          >
+            <ArrowLeft size={14} /> Back to product
+          </button>
+
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1">{product.name}</h1>
+          <p className="text-sm text-gray-500 mb-8">Choose your material, then start designing.</p>
+
+          <div className="space-y-3">
+            {MATERIAL_OPTIONS.map((material) => {
+              const active = design.materialType === material.value;
+              return (
+                <button
+                  key={material.value}
+                  onClick={() => update({ materialType: material.value })}
+                  className={`w-full text-left border rounded-2xl p-5 transition-all ${
+                    active
+                      ? 'border-violet-500 bg-violet-50 ring-1 ring-violet-300'
+                      : 'border-gray-200 bg-white hover:border-gray-400'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-base font-bold text-gray-900">{material.name}</div>
+                      <div className="text-xs font-semibold text-gray-600 mt-1">{material.spec}</div>
+                      <p className="text-sm leading-relaxed text-gray-500 mt-2">{material.description}</p>
+                    </div>
+                    <span
+                      className={`mt-1 h-5 w-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                        active ? 'border-violet-600 bg-violet-600' : 'border-gray-300'
+                      }`}
+                    >
+                      {active && <Check size={12} className="text-white" />}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            className="w-full mt-8 py-4 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
+            onClick={() => setStep('design')}
+          >
+            Start Designing <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
     );
   }
