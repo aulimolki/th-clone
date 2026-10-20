@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CartProvider } from './cart';
+import { AuthProvider } from './auth';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -8,6 +9,9 @@ import CollectionPage from './pages/CollectionPage';
 import ProductPage from './pages/ProductPage';
 import CustomizePage from './pages/CustomizePage';
 import CheckoutPage from './pages/CheckoutPage';
+import OrdersPage from './pages/OrdersPage';
+import WishlistPage from './pages/WishlistPage';
+import ProfilePage from './pages/ProfilePage';
 
 type Route =
   | { name: 'home' }
@@ -16,7 +20,10 @@ type Route =
   | { name: 'customize'; slug: string; editItemId?: string }
   | { name: 'checkout' }
   | { name: 'search'; query: string }
-  | { name: 'new' };
+  | { name: 'new' }
+  | { name: 'orders' }
+  | { name: 'wishlist' }
+  | { name: 'profile' };
 
 function parseHash(): Route {
   const hash = window.location.hash.replace(/^#/, '') || '/';
@@ -34,6 +41,10 @@ function parseHash(): Route {
   if (collectionAll) return { name: 'collection' };
   const searchMatch = hash.match(/^\/search\?q=(.*)$/);
   if (hash.match(/^\/checkout$/)) return { name: 'checkout' };
+  if (hash.match(/^\/account\/orders$/)) return { name: 'orders' };
+  if (hash.match(/^\/account\/wishlist$/)) return { name: 'wishlist' };
+  if (hash.match(/^\/account\/profile$/)) return { name: 'profile' };
+  if (hash.match(/^\/account$/)) return { name: 'profile' };
   if (searchMatch) return { name: 'search', query: decodeURIComponent(searchMatch[1]) };
   if (hash.match(/^\/new/)) return { name: 'new' };
   return { name: 'home' };
@@ -62,31 +73,36 @@ export default function App() {
     route.name === 'search';
 
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-white flex flex-col">
-        <Header onNavigate={navigate} transparentOnTop={transparentOnTop} />
-        <main className={`flex-1 ${transparentOnTop ? '' : 'pt-[100px] lg:pt-[116px]'}`}>
-          {route.name === 'home' && <HomePage onNavigate={navigate} />}
-          {route.name === 'collection' && (
-            <CollectionPage slug={route.slug} onNavigate={navigate} />
-          )}
-          {route.name === 'product' && (
-            <ProductPage slug={route.slug} onNavigate={navigate} />
-          )}
-          {route.name === 'customize' && (
-            <CustomizePage slug={route.slug} onNavigate={navigate} editItemId={route.editItemId} />
-          )}
-          {route.name === 'checkout' && <CheckoutPage onNavigate={navigate} />}
-          {route.name === 'new' && (
-            <CollectionPage onNavigate={navigate} />
-          )}
-          {route.name === 'search' && (
-            <CollectionPage onNavigate={navigate} />
-          )}
-        </main>
-        <Footer onNavigate={navigate} />
-        <CartDrawer onNavigate={navigate} />
-      </div>
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <div className="min-h-screen bg-white flex flex-col">
+          <Header onNavigate={navigate} transparentOnTop={transparentOnTop} />
+          <main className={`flex-1 ${transparentOnTop ? '' : 'pt-[100px] lg:pt-[116px]'}`}>
+            {route.name === 'home' && <HomePage onNavigate={navigate} />}
+            {route.name === 'collection' && (
+              <CollectionPage slug={route.slug} onNavigate={navigate} />
+            )}
+            {route.name === 'product' && (
+              <ProductPage slug={route.slug} onNavigate={navigate} />
+            )}
+            {route.name === 'customize' && (
+              <CustomizePage slug={route.slug} onNavigate={navigate} editItemId={route.editItemId} />
+            )}
+            {route.name === 'checkout' && <CheckoutPage onNavigate={navigate} />}
+            {route.name === 'orders' && <OrdersPage onNavigate={navigate} />}
+            {route.name === 'wishlist' && <WishlistPage onNavigate={navigate} />}
+            {route.name === 'profile' && <ProfilePage onNavigate={navigate} />}
+            {route.name === 'new' && (
+              <CollectionPage onNavigate={navigate} />
+            )}
+            {route.name === 'search' && (
+              <CollectionPage onNavigate={navigate} />
+            )}
+          </main>
+          <Footer onNavigate={navigate} />
+          <CartDrawer onNavigate={navigate} />
+        </div>
+      </CartProvider>
+    </AuthProvider>
   );
 }

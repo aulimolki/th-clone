@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Package, ChevronRight, Loader2 } from 'lucide-react';
+import { Package, Loader2 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { useAuth } from '../auth';
 
