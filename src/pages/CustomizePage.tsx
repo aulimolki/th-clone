@@ -132,25 +132,6 @@ function getTier(quantity: number) {
 
 const DEFAULT_TRANSFORM: LayerTransform = { x: 50, y: 50, scale: 1 };
 
-const CUSTOM_TEE_MOCKUPS = {
-  'custom-classic-tee': {
-    url: 'https://images.pexels.com/photos/17858295/pexels-photo-17858295.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    alt: 'Model wearing a classic white t-shirt',
-  },
-  'custom-oversized-tee': {
-    url: 'https://images.pexels.com/photos/9558588/pexels-photo-9558588.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    alt: 'Model wearing an oversized black t-shirt',
-  },
-  'custom-bootleg-tee': {
-    url: 'https://images.pexels.com/photos/2451200/pexels-photo-2451200.jpeg?auto=compress&cs=tinysrgb&w=1200',
-    alt: 'Graphic print t-shirt close-up',
-  },
-} as const;
-
-function getCustomTeeMockup(slug: string) {
-  return CUSTOM_TEE_MOCKUPS[slug as keyof typeof CUSTOM_TEE_MOCKUPS] ?? CUSTOM_TEE_MOCKUPS['custom-classic-tee'];
-}
-
 /* ─── state shape ────────────────────────────────────────────── */
 
 type TextOption = { value: string; font: string; color: string };
@@ -326,7 +307,6 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
 
   const activeColor = TEE_COLORS.find((c) => c.name === design.color) ?? TEE_COLORS[0];
   const activeBg = BACKGROUNDS.find((b) => b.label === design.background);
-  const mockupPhoto = getCustomTeeMockup(slug);
 
   if (loading) {
     return (
@@ -365,11 +345,6 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
                 backgroundColor: activeColor.hex,
                 clipPath: 'polygon(37% 12%, 49% 17%, 57% 12%, 64% 18%, 92% 48%, 80% 59%, 75% 55%, 75% 93%, 25% 93%, 25% 55%, 20% 59%, 8% 48%, 36% 18%)',
               }}
-            />
-            <img
-              src={mockupPhoto.url}
-              alt={mockupPhoto.alt}
-              className="absolute inset-0 w-full h-full object-contain mix-blend-multiply pointer-events-none"
             />
             {/* 35cm × 40cm print canvas */}
             <div
@@ -904,7 +879,6 @@ function CheckoutOverlay({
                     clipPath: 'polygon(37% 12%, 49% 17%, 57% 12%, 64% 18%, 92% 48%, 80% 59%, 75% 55%, 75% 93%, 25% 93%, 25% 55%, 20% 59%, 8% 48%, 36% 18%)',
                   }}
                 />
-                <img src={getCustomTeeMockup(product.slug).url} alt={getCustomTeeMockup(product.slug).alt} className="absolute inset-0 w-full h-full object-contain mix-blend-multiply" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   {design.text1.value && (
                     <span

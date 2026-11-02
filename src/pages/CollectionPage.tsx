@@ -97,14 +97,17 @@ export default function CollectionPage({ slug, onNavigate }: Props) {
   };
 
   const title = category?.name ?? 'All Products';
+  const bannerImage = slug === 'custom'
+    ? 'https://images.pexels.com/photos/2451200/pexels-photo-2451200.jpeg?auto=compress&cs=tinysrgb&w=1600'
+    : category?.image_url ?? 'https://images.pexels.com/photos/9558761/pexels-photo-9558761.jpeg?auto=compress&cs=tinysrgb&w=1200';
 
   return (
     <div>
       {/* Banner */}
       <div className="relative h-[200px] bg-gray-900 overflow-hidden">
         <img
-          src={category?.image_url ?? 'https://images.pexels.com/photos/9558761/pexels-photo-9558761.jpeg?auto=compress&cs=tinysrgb&w=1200'}
-          alt={title}
+          src={bannerImage}
+          alt={slug === 'custom' ? 'Graphic print t-shirt' : title}
           className="w-full h-full object-cover opacity-50"
         />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-4">
