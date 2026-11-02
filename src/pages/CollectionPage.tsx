@@ -18,7 +18,7 @@ export default function CollectionPage({ slug, onNavigate }: Props) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
 
   useEffect(() => {
     (async () => {
@@ -103,7 +103,7 @@ export default function CollectionPage({ slug, onNavigate }: Props) {
       {/* Banner */}
       <div className="relative h-[200px] bg-gray-900 overflow-hidden">
         <img
-          src={category?.image_url ?? 'https://images.pexels.com/photos/2703202/pexels-photo-2703202.jpeg'}
+          src={category?.image_url ?? 'https://images.pexels.com/photos/9558761/pexels-photo-9558761.jpeg?auto=compress&cs=tinysrgb&w=1200'}
           alt={title}
           className="w-full h-full object-cover opacity-50"
         />
@@ -259,7 +259,7 @@ export default function CollectionPage({ slug, onNavigate }: Props) {
                   onClick={() => {
                     setSelectedColors([]);
                     setSelectedTags([]);
-                    setPriceRange([0, 200]);
+                    setPriceRange([0, 1000000]);
                   }}
                   className="underline text-sm font-medium"
                 >

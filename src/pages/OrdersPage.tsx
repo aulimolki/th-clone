@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Package, Loader2 } from 'lucide-react';
 import { supabase } from '../supabase';
 import { useAuth } from '../auth';
+import { formatIdr } from '../currency';
 
 type OrderItem = {
   id: string;
@@ -93,7 +94,7 @@ export default function OrdersPage({ onNavigate }: { onNavigate: (path: string) 
                       {order.status}
                     </span>
                     <p className="text-sm font-bold mt-1">
-                      ${(Number(order.total)).toFixed(2)}
+                      {formatIdr(Number(order.total))}
                     </p>
                   </div>
                 </div>
@@ -112,7 +113,7 @@ export default function OrdersPage({ onNavigate }: { onNavigate: (path: string) 
                         </p>
                       </div>
                       <span className="font-semibold ml-3">
-                        ${(Number(item.unit_price) * item.quantity).toFixed(2)}
+                        {formatIdr(Number(item.unit_price) * item.quantity)}
                       </span>
                     </div>
                   ))}

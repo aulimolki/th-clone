@@ -36,8 +36,8 @@ export default function HomePage({ onNavigate }: Props) {
       {/* Hero */}
       <section className="relative h-[70vh] min-h-[500px] bg-black overflow-hidden">
         <img
-          src="https://images.pexels.com/photos/2703202/pexels-photo-2703202.jpeg"
-          alt="Cool Clothing Company"
+          src="https://images.pexels.com/photos/28758239/pexels-photo-28758239.jpeg?auto=compress&cs=tinysrgb&w=1600"
+          alt="Model wearing an oversized t-shirt"
           className="w-full h-full object-cover opacity-70"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -76,9 +76,9 @@ export default function HomePage({ onNavigate }: Props) {
         <div className="max-w-[1600px] mx-auto px-4 lg:px-8 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: Truck, title: 'Free Shipping', sub: 'On US orders over $90' },
+              { icon: Truck, title: 'Ongkir Lokal', sub: 'Ke seluruh Indonesia mulai Rp9.000' },
               { icon: Shirt, title: 'Premium Cotton', sub: '275gsm heavyweight combed cotton' },
-              { icon: Globe, title: 'Worldwide Delivery', sub: 'Printed in AU, US & EU' },
+              { icon: Globe, title: 'Dibuat di Indonesia', sub: 'Diproses 2–3 hari kerja' },
               { icon: Star, title: '700K+ Customers', sub: 'Rated Excellent on Reviews' },
             ].map((badge) => (
               <div key={badge.title} className="flex items-center gap-3">
@@ -133,8 +133,8 @@ export default function HomePage({ onNavigate }: Props) {
       {/* Banner CTA */}
       <section className="relative h-[400px] bg-gray-900 overflow-hidden">
         <img
-          src="https://images.pexels.com/photos/6311392/pexels-photo-6311392.jpeg"
-          alt="Heavyweight"
+          src="https://images.pexels.com/photos/18186105/pexels-photo-18186105.jpeg?auto=compress&cs=tinysrgb&w=1600"
+          alt="Folded heavyweight t-shirts"
           className="w-full h-full object-cover opacity-50"
         />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4">
@@ -231,8 +231,8 @@ export default function HomePage({ onNavigate }: Props) {
             </div>
             <div className="aspect-[4/3] bg-gray-800 overflow-hidden">
               <img
-                src="https://images.pexels.com/photos/5380642/pexels-photo-5380642.jpeg"
-                alt="Custom tees"
+                src="https://images.pexels.com/photos/20736690/pexels-photo-20736690.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                alt="Person wearing an oversized t-shirt"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -259,17 +259,17 @@ export default function HomePage({ onNavigate }: Props) {
               {
                 name: 'Sarah M.',
                 review: 'The quality is unreal. The oversized fit is perfect and the print is so crisp. Have ordered 5 times now from Cool Clothing Company.',
-                location: 'Melbourne, AU',
+                location: 'Jakarta, ID',
               },
               {
                 name: 'Jake T.',
                 review: 'Best tees I own, hands down. Heavyweight cotton that actually holds its shape after washing.',
-                location: 'Austin, US',
+                location: 'Bandung, ID',
               },
               {
                 name: 'Emma L.',
                 review: 'Custom tee came out exactly like the preview. Fast shipping and brilliant print quality.',
-                location: 'London, UK',
+                location: 'Surabaya, ID',
               },
             ].map((r) => (
               <div key={r.name} className="bg-gray-50 p-6 rounded-lg">

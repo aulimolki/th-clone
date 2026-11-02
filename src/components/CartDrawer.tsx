@@ -1,5 +1,6 @@
 import { Star, Plus, Minus, X, Pencil } from 'lucide-react';
 import { useCart } from '../cart';
+import { formatIdr } from '../currency';
 
 export default function CartDrawer({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { items, isOpen, closeCart, updateQuantity, removeItem, subtotal, loading } = useCart();
@@ -110,7 +111,7 @@ export default function CartDrawer({ onNavigate }: { onNavigate: (path: string) 
                         </button>
                       </div>
                       <span className="text-sm font-bold">
-                        ${((item.product?.price ?? 0) * item.quantity).toFixed(2)}
+                        {formatIdr((item.product?.price ?? 0) * item.quantity)}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 mt-2">
@@ -144,16 +145,16 @@ export default function CartDrawer({ onNavigate }: { onNavigate: (path: string) 
           <div className="border-t border-gray-100 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-base font-medium">Subtotal</span>
-              <span className="text-xl font-bold">${subtotal.toFixed(2)}</span>
+              <span className="text-xl font-bold">{formatIdr(subtotal)}</span>
             </div>
             <p className="text-xs text-gray-500">
-              Shipping and taxes calculated at checkout
+              Ongkir dihitung saat checkout
             </p>
             <button
               onClick={() => onNavigate('#/checkout')}
               className="w-full bg-black text-white py-4 text-sm font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors"
             >
-              Checkout — ${subtotal.toFixed(2)}
+              Checkout — {formatIdr(subtotal)}
             </button>
             <button
               onClick={closeCart}

@@ -67,7 +67,7 @@ export default function Footer({ onNavigate }: Props) {
               />
             </button>
             <p className="text-white/60 text-sm mb-4 max-w-xs">
-              Cool clothing since 2018. In-house design team. Worldwide shipping.
+              Pakaian keren sejak 2018. Dirancang dan dicetak di Indonesia dengan pengiriman ke seluruh nusantara.
               Really good website.
             </p>
             <div className="flex gap-3">
@@ -168,7 +168,7 @@ export default function Footer({ onNavigate }: Props) {
               Region
             </h3>
             <ul className="space-y-2.5">
-              {['United States (USD $)', 'Australia (AUD $)', 'United Kingdom (GBP £)', 'Europe (EUR €)'].map(
+              {['Indonesia (IDR Rp)'].map(
                 (link) => (
                   <li key={link}>
                     <button className="text-sm text-white/60 hover:text-white transition-colors">

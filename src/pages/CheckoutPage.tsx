@@ -147,7 +147,7 @@ export default function CheckoutPage({ onNavigate }: { onNavigate: (path: string
             onClick={() => onNavigate('#/')}
             className="w-full bg-black text-white py-3.5 rounded text-sm font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors"
           >
-            Continue Shopping
+            Lanjut Belanja
           </button>
         </div>
       </div>
@@ -179,11 +179,11 @@ export default function CheckoutPage({ onNavigate }: { onNavigate: (path: string
           onClick={() => onNavigate('#/collections')}
           className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-black mb-5"
         >
-          <ArrowLeft size={14} /> Continue Shopping
+          <ArrowLeft size={14} /> Lanjut Belanja
         </button>
 
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-1">Checkout</h1>
-        <p className="text-sm text-gray-500 mb-6">Complete your purchase — Indonesian payment methods available.</p>
+        <p className="text-sm text-gray-500 mb-6">Selesaikan pembelian dengan metode pembayaran Indonesia.</p>
 
         <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-start">
           {/* ── Left: forms ── */}
@@ -420,16 +420,16 @@ export default function CheckoutPage({ onNavigate }: { onNavigate: (path: string
                   {processing ? (
                     <><Loader2 size={18} className="animate-spin" /> Processing...</>
                   ) : (
-                    <>Place Order <ChevronRight size={18} /></>
+                    <>Buat Pesanan <ChevronRight size={18} /></>
                   )}
                 </button>
                 {!canPlaceOrder && !processing && (
                   <p className="text-[11px] text-gray-400 text-center mt-2">
-                    {!selectedPayment ? 'Select a payment method' : 'Complete all required fields'}
+                    {!selectedPayment ? 'Pilih metode pembayaran' : 'Lengkapi semua kolom wajib diisi'}
                   </p>
                 )}
                 <div className="flex items-center justify-center gap-1.5 mt-3 text-[11px] text-gray-400">
-                  <ShieldCheck size={13} /> Secure & encrypted checkout
+                  <ShieldCheck size={13} /> Checkout aman dan terenkripsi
                 </div>
               </div>
             </div>

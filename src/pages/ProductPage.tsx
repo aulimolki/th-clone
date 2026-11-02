@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Star, Truck, RefreshCw, Globe, ChevronRight, Sparkles, Pencil, CheckCircle2, ThumbsUp, ThumbsDown, Play, ChevronDown } from 'lucide-react';
 import { supabase, type Product, type PrintType, type MaterialType } from '../supabase';
 import ProductCard from '../components/ProductCard';
+import { formatIdr } from '../currency';
 
 type Props = {
   slug: string;
@@ -155,11 +156,11 @@ export default function ProductPage({ slug, onNavigate }: Props) {
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mb-3">{product.name}</h1>
 
             <div className="flex items-center gap-3 mb-6">
-              <span className="text-2xl font-bold">${product.price.toFixed(2)}</span>
+              <span className="text-2xl font-bold">{formatIdr(product.price)}</span>
               {hasDiscount && (
                 <>
-                  <span className="text-lg text-gray-400 line-through">${product.compare_at_price!.toFixed(2)}</span>
-                  <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5">SAVE ${(product.compare_at_price! - product.price).toFixed(2)}</span>
+                  <span className="text-lg text-gray-400 line-through">{formatIdr(product.compare_at_price!)}</span>
+                  <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5">HEMAT {formatIdr(product.compare_at_price! - product.price)}</span>
                 </>
               )}
             </div>
@@ -229,9 +230,9 @@ export default function ProductPage({ slug, onNavigate }: Props) {
             {/* Features */}
             <div className="mt-8 space-y-3 border-t border-gray-100 pt-6">
               {[
-                { icon: Truck, text: 'Free US shipping over $90' },
+                { icon: Truck, text: 'Pengiriman lokal ke seluruh Indonesia' },
                 { icon: RefreshCw, text: 'Exchanges or store credit within 60 days' },
-                { icon: Globe, text: 'Printed in Australia, US & Europe — ships in 2-3 days' },
+                { icon: Globe, text: 'Diproses 2–3 hari kerja dari Indonesia' },
               ].map((f) => (
                 <div key={f.text} className="flex items-center gap-3"><f.icon size={20} strokeWidth={1.5} /><span className="text-sm text-gray-600">{f.text}</span></div>
               ))}
@@ -253,7 +254,7 @@ export default function ProductPage({ slug, onNavigate }: Props) {
               </details>
               <details className="border-b border-gray-100 pb-3">
                 <summary className="text-sm font-bold uppercase tracking-wide cursor-pointer py-2">Shipping & Returns</summary>
-                <p className="text-sm text-gray-600 mt-2">Every order is made to order and printed in 2-3 business days from local facilities in Australia, the US and Europe. We offer exchanges or store credit on unworn items for up to 60 days after purchase.</p>
+                <p className="text-sm text-gray-600 mt-2">Setiap pesanan dibuat sesuai permintaan dan dicetak dalam 2–3 hari kerja dari Indonesia. Kami menerima penukaran atau kredit toko untuk barang yang belum dipakai hingga 30 hari setelah pembelian.</p>
               </details>
             </div>
           </div>

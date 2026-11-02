@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Heart, Trash2, Loader2 } from 'lucide-react';
 import { supabase, type Product } from '../supabase';
 import { useAuth } from '../auth';
+import { formatIdr } from '../currency';
 
 type WishlistRow = {
   id: string;
@@ -93,7 +94,7 @@ export default function WishlistPage({ onNavigate }: { onNavigate: (path: string
                 </button>
                 <div className="p-4">
                   <p className="text-sm font-semibold truncate">{item.product.name}</p>
-                  <p className="text-sm font-bold mt-1">${Number(item.product.price).toFixed(2)}</p>
+                  <p className="text-sm font-bold mt-1">{formatIdr(Number(item.product.price))}</p>
                   <div className="flex items-center justify-between mt-3">
                     <button
                       onClick={() => onNavigate(`#/product/${item.product.slug}`)}

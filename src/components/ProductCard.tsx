@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Star, ShoppingBag } from 'lucide-react';
 import { type Product } from '../supabase';
 import { useCart } from '../cart';
+import { formatIdr } from '../currency';
 
 type Props = {
   product: Product;
@@ -103,10 +104,10 @@ export default function ProductCard({ product, onNavigate }: Props) {
         </h3>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold">${product.price.toFixed(2)}</span>
+          <span className="text-sm font-bold">{formatIdr(product.price)}</span>
           {hasDiscount && (
             <span className="text-sm text-gray-400 line-through">
-              ${product.compare_at_price!.toFixed(2)}
+              {formatIdr(product.compare_at_price!)}
             </span>
           )}
         </div>

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { supabase, type Product, type PrintType, type MaterialType, type DesignData, type LayerTransform } from '../supabase';
 import { useCart } from '../cart';
+import { formatIdr } from '../currency';
 
 type Props = {
   slug: string;
@@ -346,8 +347,8 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
               }}
             />
             <img
-              src="/Front_Tee_Only.png"
-              alt="Front view of the selected t-shirt"
+              src="https://images.pexels.com/photos/9558761/pexels-photo-9558761.jpeg?auto=compress&cs=tinysrgb&w=1200"
+              alt="Real t-shirt mockup"
               className="absolute inset-0 w-full h-full object-contain mix-blend-multiply pointer-events-none"
             />
             {/* 35cm × 40cm print canvas */}
@@ -883,7 +884,7 @@ function CheckoutOverlay({
                     clipPath: 'polygon(37% 12%, 49% 17%, 57% 12%, 64% 18%, 92% 48%, 80% 59%, 75% 55%, 75% 93%, 25% 93%, 25% 55%, 20% 59%, 8% 48%, 36% 18%)',
                   }}
                 />
-                <img src="/Front_Tee_Only.png" alt="" className="absolute inset-0 w-full h-full object-contain mix-blend-multiply" />
+                <img src="https://images.pexels.com/photos/9558761/pexels-photo-9558761.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="" className="absolute inset-0 w-full h-full object-contain mix-blend-multiply" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   {design.text1.value && (
                     <span
@@ -1024,7 +1025,7 @@ function CheckoutOverlay({
             </div>
             {tier.discount > 0 && totalQty > 0 && (
               <p className="text-xs text-green-600 font-medium mt-2">
-                You save {`${savings.toFixed(2)}`} ({Math.round(tier.discount * 100)}% off)
+                Anda hemat {formatIdr(savings)} ({Math.round(tier.discount * 100)}% off)
               </p>
             )}
             {tier.discount === 0 && totalQty > 0 && totalQty < 3 && (
@@ -1063,12 +1064,12 @@ function CheckoutOverlay({
           {tier.discount > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-green-600 font-medium">Bulk savings</span>
-              <span className="text-green-600 font-medium">−{`${savings.toFixed(2)}`}</span>
+              <span className="text-green-600 font-medium">−{formatIdr(savings)}</span>
             </div>
           )}
           <div className="flex justify-between text-base font-bold">
             <span>Total</span>
-            <span>{`${total.toFixed(2)}`}</span>
+            <span>{formatIdr(total)}</span>
           </div>
           <button
             onClick={handleAddToCart}

@@ -91,12 +91,12 @@ export default function Header({
         {/* Announcement bar */}
         <div className="bg-black text-white text-center py-2.5 px-4 text-xs font-medium tracking-wide relative overflow-hidden">
           <div className="animate-marquee whitespace-nowrap inline-block">
-            <span className="mx-8">FREE US SHIPPING OVER $90</span>
-            <span className="mx-8">20% OFF WITH CODE COOL — LIMITED TIME SALE ENDS SOON</span>
-            <span className="mx-8">MADE TO ORDER IN 2-3 BUSINESS DAYS</span>
-            <span className="mx-8">FREE US SHIPPING OVER $90</span>
-            <span className="mx-8">20% OFF WITH CODE COOL — LIMITED TIME SALE ENDS SOON</span>
-            <span className="mx-8">MADE TO ORDER IN 2-3 BUSINESS DAYS</span>
+            <span className="mx-8">ONGKIR LOKAL KE SELURUH INDONESIA</span>
+            <span className="mx-8">DISKON 10% UNTUK PESANAN PERTAMA</span>
+            <span className="mx-8">DIBUAT SESUAI PESANAN DALAM 2–3 HARI KERJA</span>
+            <span className="mx-8">ONGKIR LOKAL KE SELURUH INDONESIA</span>
+            <span className="mx-8">DISKON 10% UNTUK PESANAN PERTAMA</span>
+            <span className="mx-8">DIBUAT SESUAI PESANAN DALAM 2–3 HARI KERJA</span>
           </div>
         </div>
         <div className="max-w-[1600px] mx-auto px-4 lg:px-8">
