@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { User, Package, Heart, LogOut, ChevronDown } from 'lucide-react';
+import { User, Package, Heart, LogOut, ChevronDown, Store } from 'lucide-react';
 import { useAuth } from '../auth';
 
 export default function ProfileMenu({ onNavigate }: { onNavigate: (path: string) => void }) {
@@ -65,6 +65,7 @@ export default function ProfileMenu({ onNavigate }: { onNavigate: (path: string)
           <div className="py-1">
             <MenuItem icon={<Package size={16} />} label="My Orders" onClick={() => go('#/account/orders')} />
             <MenuItem icon={<Heart size={16} />} label="Wishlist" onClick={() => go('#/account/wishlist')} />
+            <MenuItem icon={<Store size={16} />} label="Creator Dashboard" onClick={() => go('#/creator/dashboard')} />
             <MenuItem icon={<User size={16} />} label="Profile" onClick={() => go('#/account/profile')} />
           </div>
 

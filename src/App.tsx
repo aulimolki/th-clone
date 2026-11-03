@@ -13,6 +13,9 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrdersPage from './pages/OrdersPage';
 import WishlistPage from './pages/WishlistPage';
 import ProfilePage from './pages/ProfilePage';
+import CreatorRegisterPage from './pages/CreatorRegisterPage';
+import CreatorDashboardPage from './pages/CreatorDashboardPage';
+import CreatorStorefrontPage from './pages/CreatorStorefrontPage';
 
 type Route =
   | { name: 'home' }
@@ -24,7 +27,11 @@ type Route =
   | { name: 'new' }
   | { name: 'orders' }
   | { name: 'wishlist' }
-  | { name: 'profile' };
+  | { name: 'profile' }
+  | { name: 'creator_register' }
+  | { name: 'creator_dashboard' }
+  | { name: 'creator_storefront'; slug: string }
+  | { name: 'creator_create_product' };
 
 function parseHash(): Route {
   const hash = window.location.hash.replace(/^#/, '') || '/';
@@ -55,6 +62,11 @@ function parseHash(): Route {
   if (hash.match(/^\/account\/wishlist$/)) return { name: 'wishlist' };
   if (hash.match(/^\/account\/profile$/)) return { name: 'profile' };
   if (hash.match(/^\/account$/)) return { name: 'profile' };
+  if (hash.match(/^\/creator\/register$/)) return { name: 'creator_register' };
+  if (hash.match(/^\/creator\/dashboard$/)) return { name: 'creator_dashboard' };
+  if (hash.match(/^\/creator\/create-product$/)) return { name: 'creator_create_product' };
+  const storefrontMatch = hash.match(/^\/store\/(.+)$/);
+  if (storefrontMatch) return { name: 'creator_storefront', slug: storefrontMatch[1] };
   if (searchMatch) return { name: 'search', query: decodeURIComponent(searchMatch[1]) };
   if (hash.match(/^\/new/)) return { name: 'new' };
   return { name: 'home' };
@@ -80,7 +92,8 @@ export default function App() {
     route.name === 'home' ||
     route.name === 'collection' ||
     route.name === 'new' ||
-    route.name === 'search';
+    route.name === 'search' ||
+    route.name === 'creator_storefront';
 
   return (
     <AuthProvider>
@@ -112,6 +125,12 @@ export default function App() {
             )}
             {route.name === 'search' && (
               <CollectionPage onNavigate={navigate} />
+            )}
+            {route.name === 'creator_register' && <CreatorRegisterPage onNavigate={navigate} />}
+            {route.name === 'creator_dashboard' && <CreatorDashboardPage onNavigate={navigate} />}
+            {route.name === 'creator_create_product' && <CreatorDashboardPage onNavigate={navigate} />}
+            {route.name === 'creator_storefront' && (
+              <CreatorStorefrontPage slug={route.slug} onNavigate={navigate} />
             )}
           </main>
           <Footer onNavigate={navigate} />

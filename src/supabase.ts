@@ -14,6 +14,24 @@ export type Category = {
   created_at: string;
 };
 
+export type Creator = {
+  id: string;
+  name: string;
+  slug: string;
+  bio: string | null;
+  avatar_url: string | null;
+  cover_url: string | null;
+  followers: number;
+  total_sales: number;
+  total_products: number;
+  member_since: string;
+  social_links: Record<string, string>;
+  is_featured: boolean;
+  user_id: string | null;
+  status: string | null;
+  created_at: string;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -31,6 +49,16 @@ export type Product = {
   review_count: number;
   created_at: string;
   category?: Category;
+  creator_id: string | null;
+  collection_id: string | null;
+  is_featured: boolean;
+  material: string | null;
+  style: string | null;
+  design_data?: DesignData | null;
+  base_cost?: number | null;
+  is_published?: boolean;
+  blank_slug?: string | null;
+  creator?: Creator;
 };
 
 export type PrintType = 'DTG' | 'DTF';
@@ -45,6 +73,8 @@ export type LayerTransform = {
 export type DesignData = {
   color: string;
   images: string[];
+  originalImages?: string[];
+  bgRemoved?: boolean[];
   text1: { value: string; font: string; color: string };
   text2: { value: string; font: string; color: string };
   sticker: string;

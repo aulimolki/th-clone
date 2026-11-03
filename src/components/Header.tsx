@@ -285,6 +285,12 @@ export default function Header({
                       Wishlist
                     </button>
                     <button
+                      onClick={() => navigate('#/creator/dashboard')}
+                      className="block w-full text-left py-3 text-base font-medium border-b border-gray-50"
+                    >
+                      Creator Dashboard
+                    </button>
+                    <button
                       onClick={() => navigate('#/account/profile')}
                       className="block w-full text-left py-3 text-base font-medium border-b border-gray-50"
                     >

@@ -17,6 +17,8 @@ import {
 import { supabase, type Product, type PrintType, type MaterialType, type DesignData, type LayerTransform } from '../supabase';
 import { useCart } from '../cart';
 import { formatIdr } from '../currency';
+import { removeBackground } from '../removeBg';
+import { Eraser, Loader2, RotateCcw } from 'lucide-react';
 
 type Props = {
   slug: string;
@@ -139,6 +141,8 @@ type TextOption = { value: string; font: string; color: string };
 type DesignState = {
   color: string;
   images: string[];
+  originalImages: string[];  // Untouched upload data (for restoring after bg removal)
+  bgRemoved: boolean[];        // Per-image flag: true when background has been removed
   text1: TextOption;
   text2: TextOption;
   sticker: string;
@@ -154,6 +158,8 @@ type DesignState = {
 const DEFAULT_STATE: DesignState = {
   color: 'White',
   images: [],
+  originalImages: [],
+  bgRemoved: [],
   text1: { value: '', font: FONT_FAMILIES[0].value, color: FONT_COLORS[0].hex },
   text2: { value: '', font: FONT_FAMILIES[7].value, color: FONT_COLORS[7].hex },
   sticker: '',
@@ -178,6 +184,8 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
   const [historyIndex, setHistoryIndex] = useState(0);
   const [step, setStep] = useState<'design' | 'checkout'>('design');
   const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
+  const [bgTolerance, setBgTolerance] = useState(32);
+  const [processingBgIdx, setProcessingBgIdx] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const printAreaRef = useRef<HTMLDivElement>(null);
   const { addToCart, items, updateItemDesign } = useCart();
@@ -209,6 +217,8 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
     const restored: DesignState = {
       color: d.color,
       images: d.images,
+      originalImages: (d as { originalImages?: string[] }).originalImages ?? d.images,
+      bgRemoved: (d as { bgRemoved?: boolean[] }).bgRemoved ?? d.images.map(() => false),
       text1: d.text1,
       text2: d.text2,
       sticker: d.sticker,
@@ -262,14 +272,17 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
     files.slice(0, slots).forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {
-        setDesign((prev) => {
-          const newImages = [...prev.images, reader.result as string];
-          const newTransforms = [...prev.imageTransforms, { ...DEFAULT_TRANSFORM }];
-          const newOrder = [...prev.imageOrder, prev.images.length];
-          const next = { ...prev, images: newImages, imageTransforms: newTransforms, imageOrder: newOrder };
-          pushHistory(next);
-          return next;
-        });
+          const result = reader.result as string;
+          setDesign((prev) => {
+            const newImages = [...prev.images, result];
+            const newOriginals = [...prev.originalImages, result];
+            const newBgRemoved = [...prev.bgRemoved, false];
+            const newTransforms = [...prev.imageTransforms, { ...DEFAULT_TRANSFORM }];
+            const newOrder = [...prev.imageOrder, prev.images.length];
+            const next = { ...prev, images: newImages, originalImages: newOriginals, bgRemoved: newBgRemoved, imageTransforms: newTransforms, imageOrder: newOrder };
+            pushHistory(next);
+            return next;
+          });
       };
       reader.readAsDataURL(file);
     });
@@ -278,11 +291,13 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
 
   const removeImage = (idx: number) => {
     const newImages = design.images.filter((_, i) => i !== idx);
+    const newOriginals = design.originalImages.filter((_, i) => i !== idx);
+    const newBgRemoved = design.bgRemoved.filter((_, i) => i !== idx);
     const newTransforms = design.imageTransforms.filter((_, i) => i !== idx);
     const newOrder = design.imageOrder
       .filter((i) => i !== idx)
       .map((i) => (i > idx ? i - 1 : i));
-    update({ images: newImages, imageTransforms: newTransforms, imageOrder: newOrder });
+    update({ images: newImages, originalImages: newOriginals, bgRemoved: newBgRemoved, imageTransforms: newTransforms, imageOrder: newOrder });
     if (selectedLayer === `image-${idx}`) setSelectedLayer(null);
   };
 
@@ -303,6 +318,39 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
 
   const commitTransform = () => {
     pushHistory(design);
+  };
+
+  const selectedImageIdx = selectedLayer?.startsWith('image-')
+    ? parseInt(selectedLayer.replace('image-', ''), 10)
+    : null;
+
+  const toggleBackgroundRemoval = async (idx: number) => {
+    if (processingBgIdx !== null) return;
+    const isRemoved = design.bgRemoved[idx] ?? false;
+    if (isRemoved) {
+      // Restore original
+      const newImages = [...design.images];
+      newImages[idx] = design.originalImages[idx];
+      const newBgRemoved = [...design.bgRemoved];
+      newBgRemoved[idx] = false;
+      update({ images: newImages, bgRemoved: newBgRemoved });
+      return;
+    }
+    // Remove background from original
+    const source = design.originalImages[idx] ?? design.images[idx];
+    setProcessingBgIdx(idx);
+    try {
+      const result = await removeBackground(source, bgTolerance);
+      const newImages = [...design.images];
+      newImages[idx] = result;
+      const newBgRemoved = [...design.bgRemoved];
+      newBgRemoved[idx] = true;
+      update({ images: newImages, bgRemoved: newBgRemoved });
+    } catch {
+      // ignore
+    } finally {
+      setProcessingBgIdx(null);
+    }
   };
 
   const activeColor = TEE_COLORS.find((c) => c.name === design.color) ?? TEE_COLORS[0];
@@ -542,6 +590,54 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
               <Plus size={16} /> Upload Image
             </button>
           </Section>
+
+          {/* ── Remove Background (selected image only) ── */}
+          {selectedImageIdx !== null && design.images[selectedImageIdx] && (
+            <Section title="Remove Background">
+              <div className="space-y-3">
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  Click the photo on the canvas to select it, then toggle to remove the background.
+                  Adjust the tolerance slider for cleaner edges, then toggle again to reprocess.
+                </p>
+                <div>
+                  <label className="flex items-center justify-between text-xs font-semibold text-gray-600 mb-1.5">
+                    <span>Tolerance</span>
+                    <span className="text-gray-400 font-normal">{bgTolerance}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={8}
+                    max={80}
+                    value={bgTolerance}
+                    onChange={(e) => setBgTolerance(Number(e.target.value))}
+                    className="w-full accent-violet-600"
+                  />
+                </div>
+                <button
+                  onClick={() => toggleBackgroundRemoval(selectedImageIdx)}
+                  disabled={processingBgIdx !== null}
+                  className={`w-full py-2.5 rounded text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                    design.bgRemoved[selectedImageIdx]
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'text-white'
+                  } ${processingBgIdx !== null ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  style={
+                    design.bgRemoved[selectedImageIdx]
+                      ? undefined
+                      : { background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }
+                  }
+                >
+                  {processingBgIdx === selectedImageIdx ? (
+                    <><Loader2 size={16} className="animate-spin" /> Processing…</>
+                  ) : design.bgRemoved[selectedImageIdx] ? (
+                    <><RotateCcw size={16} /> Restore Background</>
+                  ) : (
+                    <><Eraser size={16} /> Remove Background</>
+                  )}
+                </button>
+              </div>
+            </Section>
+          )}
 
           {/* ── Add Your Text ── */}
           <Section title="Add Your Text">
@@ -824,6 +920,8 @@ function CheckoutOverlay({
     const designData: DesignData = {
       color: design.color,
       images: design.images,
+      originalImages: design.originalImages,
+      bgRemoved: design.bgRemoved,
       text1: design.text1,
       text2: design.text2,
       sticker: design.sticker,
