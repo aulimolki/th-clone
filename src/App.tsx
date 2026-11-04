@@ -21,7 +21,7 @@ type Route =
   | { name: 'home' }
   | { name: 'collection'; slug?: string }
   | { name: 'product'; slug: string }
-  | { name: 'customize'; slug: string; editItemId?: string; material?: string }
+  | { name: 'customize'; slug: string; editItemId?: string; material?: string; publishAsCreator: boolean }
   | { name: 'checkout' }
   | { name: 'search'; query: string }
   | { name: 'new' }
@@ -30,8 +30,7 @@ type Route =
   | { name: 'profile' }
   | { name: 'creator_register' }
   | { name: 'creator_dashboard' }
-  | { name: 'creator_storefront'; slug: string }
-  | { name: 'creator_create_product' };
+  | { name: 'creator_storefront'; slug: string };
 
 function parseHash(): Route {
   const hash = window.location.hash.replace(/^#/, '') || '/';
@@ -42,15 +41,17 @@ function parseHash(): Route {
   if (customizeMatch) {
     const raw = customizeMatch[1];
     let material: string | undefined;
+    let publishAsCreator = false;
     let rest = raw;
     const qIdx = raw.indexOf('?');
     if (qIdx !== -1) {
       rest = raw.slice(0, qIdx);
       const params = new URLSearchParams(raw.slice(qIdx + 1));
       material = params.get('material') ?? undefined;
+      publishAsCreator = params.get('mode') === 'creator';
     }
     const parts = rest.split('/edit/');
-    return { name: 'customize', slug: parts[0], editItemId: parts[1], material };
+    return { name: 'customize', slug: parts[0], editItemId: parts[1], material, publishAsCreator };
   }
   const collectionMatch = hash.match(/^\/collections\/(.+)$/);
   if (collectionMatch) return { name: 'collection', slug: collectionMatch[1] };
@@ -64,7 +65,6 @@ function parseHash(): Route {
   if (hash.match(/^\/account$/)) return { name: 'profile' };
   if (hash.match(/^\/creator\/register$/)) return { name: 'creator_register' };
   if (hash.match(/^\/creator\/dashboard$/)) return { name: 'creator_dashboard' };
-  if (hash.match(/^\/creator\/create-product$/)) return { name: 'creator_create_product' };
   const storefrontMatch = hash.match(/^\/store\/(.+)$/);
   if (storefrontMatch) return { name: 'creator_storefront', slug: storefrontMatch[1] };
   if (searchMatch) return { name: 'search', query: decodeURIComponent(searchMatch[1]) };
@@ -114,6 +114,7 @@ export default function App() {
                 onNavigate={navigate}
                 editItemId={route.editItemId}
                 initialMaterial={route.material as MaterialType | undefined}
+                publishAsCreator={route.publishAsCreator}
               />
             )}
             {route.name === 'checkout' && <CheckoutPage onNavigate={navigate} />}
@@ -128,7 +129,6 @@ export default function App() {
             )}
             {route.name === 'creator_register' && <CreatorRegisterPage onNavigate={navigate} />}
             {route.name === 'creator_dashboard' && <CreatorDashboardPage onNavigate={navigate} />}
-            {route.name === 'creator_create_product' && <CreatorDashboardPage onNavigate={navigate} />}
             {route.name === 'creator_storefront' && (
               <CreatorStorefrontPage slug={route.slug} onNavigate={navigate} />
             )}

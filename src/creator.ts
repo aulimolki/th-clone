@@ -1,16 +1,17 @@
-import { supabase, type Creator, type Product } from './supabase';
+import { supabase, type Creator, type DesignData, type Product } from './supabase';
 
 export type StoreStatus = 'not_registered' | 'draft' | 'pending_review' | 'active' | 'rejected' | 'suspended';
 
 export const BLANK_PRODUCTS = [
-  { slug: 'custom-classic-tee', name: 'Classic Tee', baseCost: 90000 },
-  { slug: 'custom-oversized-tee', name: 'Oversized Tee', baseCost: 105000 },
-  { slug: 'custom-bootleg-tee', name: 'Bootleg Tee', baseCost: 110000 },
+  { slug: 'custom-classic-tee', name: 'Classic Tee', baseCost: 90000, desc: 'Regular fit cotton tee' },
+  { slug: 'custom-oversized-tee', name: 'Oversized Tee', baseCost: 105000, desc: 'Drop shoulder oversized fit' },
+  { slug: 'custom-bootleg-tee', name: 'Bootleg Tee', baseCost: 110000, desc: 'Boxy heavyweight tee' },
 ] as const;
 
 export const PLATFORM_FEE_RATE = 0.05;
 export const PAYMENT_FEE_RATE = 0.022;
 export const PACKAGING_COST = 5000;
+export const MIN_CREATOR_EARNINGS = 10000;
 
 export function slugify(text: string): string {
   return text
@@ -23,13 +24,13 @@ export function slugify(text: string): string {
     .slice(0, 30);
 }
 
-export function isSlugAvailable(slug: string): Promise<boolean> {
-  return supabase
+export async function isSlugAvailable(slug: string): Promise<boolean> {
+  const { data } = await supabase
     .from('creators')
     .select('id')
     .eq('slug', slug)
-    .maybeSingle()
-    .then(({ data }) => !data);
+    .maybeSingle();
+  return !data;
 }
 
 export async function getCreatorByUserId(userId: string): Promise<Creator | null> {
@@ -69,6 +70,19 @@ export async function getPublishedCreatorProducts(creatorId: string): Promise<Pr
   return (data ?? []) as unknown as Product[];
 }
 
+export function getBaseCost(blankSlug: string): number | null {
+  const blank = BLANK_PRODUCTS.find((b) => b.slug === blankSlug);
+  return blank ? blank.baseCost : null;
+}
+
+export function getMinimumRetailPrice(baseCost: number): number {
+  const fixedCosts = baseCost + PACKAGING_COST;
+  const raw =
+    (MIN_CREATOR_EARNINGS + fixedCosts * (1 - PLATFORM_FEE_RATE)) /
+    (1 - PAYMENT_FEE_RATE - PLATFORM_FEE_RATE);
+  return Math.ceil(raw / 1000) * 1000;
+}
+
 export type PriceBreakdown = {
   retailPrice: number;
   baseCost: number;
@@ -82,8 +96,68 @@ export function calculateEarnings(retailPrice: number, baseCost: number): PriceB
   const packagingCost = PACKAGING_COST;
   const paymentFee = Math.round(retailPrice * PAYMENT_FEE_RATE);
   const platformFee = Math.round((retailPrice - baseCost - packagingCost) * PLATFORM_FEE_RATE);
-  const creatorEarnings = Math.max(0, retailPrice - baseCost - packagingCost - paymentFee - platformFee);
+  const creatorEarnings = retailPrice - baseCost - packagingCost - paymentFee - platformFee;
   return { retailPrice, baseCost, packagingCost, paymentFee, platformFee, creatorEarnings };
+}
+
+export type CreatorProductInput = {
+  name: string;
+  description: string;
+  price: number;
+  isPublished: boolean;
+};
+
+function generateProductSlug(name: string): string {
+  const base = slugify(name) || 'product';
+  return `${base}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export async function createCreatorProduct(params: {
+  creator: Creator;
+  blank: Product;
+  baseCost: number;
+  design: DesignData;
+  input: CreatorProductInput;
+}): Promise<{ error: string | null }> {
+  const { creator, blank, baseCost, design, input } = params;
+  const { error } = await supabase.from('products').insert({
+    name: input.name,
+    slug: generateProductSlug(input.name),
+    description: input.description || null,
+    price: input.price,
+    compare_at_price: null,
+    category_id: null,
+    image_url: blank.image_url,
+    image_url_2: null,
+    color: design.color,
+    sizes: blank.sizes,
+    tags: [],
+    rating: 0,
+    review_count: 0,
+    material: design.materialType ?? null,
+    creator_id: creator.id,
+    design_data: design,
+    base_cost: baseCost,
+    is_published: input.isPublished,
+    blank_slug: blank.slug,
+  });
+  return { error: error?.message ?? null };
+}
+
+export async function updateCreatorProduct(
+  productId: string,
+  input: CreatorProductInput,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('products')
+    .update({
+      name: input.name,
+      description: input.description || null,
+      price: input.price,
+      is_published: input.isPublished,
+    })
+    .eq('id', productId);
+  return { error: error?.message ?? null };
 }
 
 export type CreatorStats = {

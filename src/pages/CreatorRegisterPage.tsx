@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Store, ArrowLeft, Check, Loader2, AlertCircle, Instagram, Youtube, Twitter } from 'lucide-react';
 import { useAuth } from '../auth';
 import { supabase } from '../supabase';
-import { slugify, isSlugAvailable, type StoreStatus } from '../creator';
+import { slugify, isSlugAvailable } from '../creator';
 
 export default function CreatorRegisterPage({
   onNavigate,

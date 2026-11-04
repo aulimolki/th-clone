@@ -25,11 +25,6 @@ export function removeBackground(dataUrl: string, tolerance = 32): Promise<strin
         const visited = new Uint8Array(w * h);
         const queue: number[] = [];
 
-        const sampleColor = (x: number, y: number): [number, number, number] => {
-          const i = (y * w + x) * 4;
-          return [data[i], data[i + 1], data[i + 2]];
-        };
-
         const colorDist = (i: number, r: number, g: number, b: number) => {
           const dr = data[i] - r;
           const dg = data[i + 1] - g;

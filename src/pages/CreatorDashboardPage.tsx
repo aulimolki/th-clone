@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Package, Plus, Store, Settings, Wallet,
-  TrendingUp, ArrowLeft, Loader2, ExternalLink, Eye, Pencil,
-  Trash2, AlertCircle,
+  TrendingUp, ArrowLeft, Loader2, ExternalLink, Eye,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { supabase, type Creator, type Product } from '../supabase';
 import {
-  getCreatorByUserId, getCreatorProducts, getCreatorStats,
+  getCreatorByUserId, getCreatorProducts, getCreatorStats, BLANK_PRODUCTS,
   type CreatorStats,
 } from '../creator';
 import { formatIdr } from '../currency';
@@ -165,12 +165,11 @@ export default function CreatorDashboardPage({
           {tab === 'products' && (
             <ProductsTab
               products={products}
-              creator={creator}
-              onNavigate={onNavigate}
+              onCreate={() => setTab('create')}
               onRefresh={load}
             />
           )}
-          {tab === 'create' && <CreateTab creator={creator} onNavigate={onNavigate} />}
+          {tab === 'create' && <CreateTab onNavigate={onNavigate} />}
           {tab === 'store' && <StoreSettingsTab creator={creator} onUpdated={load} />}
         </div>
       </div>
@@ -260,13 +259,11 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
 
 function ProductsTab({
   products,
-  creator,
-  onNavigate,
+  onCreate,
   onRefresh,
 }: {
   products: Product[];
-  creator: Creator;
-  onNavigate: (path: string) => void;
+  onCreate: () => void;
   onRefresh: () => void;
 }) {
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -289,7 +286,7 @@ function ProductsTab({
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">My Products</h2>
         <button
-          onClick={() => onNavigate(`#/creator/create-product`)}
+          onClick={onCreate}
           className="flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
           <Plus size={16} /> New Product
@@ -302,7 +299,7 @@ function ProductsTab({
           <h3 className="text-lg font-bold text-gray-900 mb-2">No products yet</h3>
           <p className="text-sm text-gray-500 mb-6">Create your first product using the CCC design editor.</p>
           <button
-            onClick={() => onNavigate(`#/creator/create-product`)}
+            onClick={onCreate}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
           >
             <Plus size={16} /> Create Product
@@ -352,23 +349,17 @@ function ProductsTab({
   );
 }
 
-function CreateTab({ creator, onNavigate }: { creator: Creator; onNavigate: (path: string) => void }) {
-  const blanks = [
-    { slug: 'custom-classic-tee', name: 'Classic Tee', baseCost: 90000, desc: 'Regular fit cotton tee' },
-    { slug: 'custom-oversized-tee', name: 'Oversized Tee', baseCost: 105000, desc: 'Drop shoulder oversized fit' },
-    { slug: 'custom-bootleg-tee', name: 'Bootleg Tee', baseCost: 110000, desc: 'Boxy heavyweight tee' },
-  ];
-
+function CreateTab({ onNavigate }: { onNavigate: (path: string) => void }) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Create a Product</h2>
       <p className="text-sm text-gray-500">Choose a blank garment to start designing. You'll use the CCC design editor, set your price, and publish.</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {blanks.map((b) => (
+        {BLANK_PRODUCTS.map((b) => (
           <button
             key={b.slug}
-            onClick={() => onNavigate(`#/customize/${b.slug}?creator=${creator.id}`)}
+            onClick={() => onNavigate(`#/customize/${b.slug}?mode=creator`)}
             className="bg-white rounded-2xl border border-gray-100 p-6 text-left hover:border-gray-300 hover:shadow-md transition-all group"
           >
             <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">

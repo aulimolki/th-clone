@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Store, Loader2, Instagram, Youtube, Twitter, ArrowLeft, Package } from 'lucide-react';
 import { getCreatorBySlug, getPublishedCreatorProducts } from '../creator';
-import { formatIdr } from '../currency';
 import type { Creator, Product } from '../supabase';
 import ProductCard from '../components/ProductCard';
 
@@ -95,7 +94,7 @@ export default function CreatorStorefrontPage({
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{creator.name}</h1>
             {creator.bio && <p className="text-sm text-gray-500 mt-1 max-w-2xl">{creator.bio}</p>}
             <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-              <span>{creator.total_products} products</span>
+              <span>{products.length} products</span>
               <span>{creator.followers} followers</span>
               <span>Member since {new Date(creator.member_since).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
             </div>

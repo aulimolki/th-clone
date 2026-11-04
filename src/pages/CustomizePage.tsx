@@ -18,6 +18,7 @@ import { supabase, type Product, type PrintType, type MaterialType, type DesignD
 import { useCart } from '../cart';
 import { formatIdr } from '../currency';
 import { removeBackground } from '../removeBg';
+import CreatorPublishPanel from '../components/CreatorPublishPanel';
 import { Eraser, Loader2, RotateCcw } from 'lucide-react';
 
 type Props = {
@@ -25,7 +26,27 @@ type Props = {
   onNavigate: (path: string) => void;
   editItemId?: string;
   initialMaterial?: MaterialType;
+  publishAsCreator?: boolean;
 };
+
+function toDesignData(design: DesignState, materialType: MaterialType): DesignData {
+  return {
+    color: design.color,
+    images: design.images,
+    originalImages: design.originalImages,
+    bgRemoved: design.bgRemoved,
+    text1: design.text1,
+    text2: design.text2,
+    sticker: design.sticker,
+    background: design.background,
+    imageTransforms: design.imageTransforms,
+    imageOrder: design.imageOrder,
+    text1Transform: design.text1Transform,
+    text2Transform: design.text2Transform,
+    stickerTransform: design.stickerTransform,
+    materialType,
+  };
+}
 
 /* ─── constants ─────────────────────────────────────────────── */
 
@@ -176,7 +197,7 @@ type LayerId = string;
 
 /* ─── component ──────────────────────────────────────────────── */
 
-export default function CustomizePage({ slug, onNavigate, editItemId, initialMaterial }: Props) {
+export default function CustomizePage({ slug, onNavigate, editItemId, initialMaterial, publishAsCreator }: Props) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [design, setDesign] = useState<DesignState>(DEFAULT_STATE);
@@ -689,13 +710,21 @@ export default function CustomizePage({ slug, onNavigate, editItemId, initialMat
             style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}
             onClick={() => setStep('checkout')}
           >
-            Continue <ChevronRight size={18} />
+            {publishAsCreator ? 'Add to my store' : 'Continue'} <ChevronRight size={18} />
           </button>
         </div>
       </div>
 
       {/* ── Checkout overlay ── */}
-      {step === 'checkout' && (
+      {step === 'checkout' && publishAsCreator && product && (
+        <CreatorPublishPanel
+          product={product}
+          designData={toDesignData(design, design.materialType ?? 'Premium Heavyweight')}
+          onClose={() => setStep('design')}
+          onNavigate={onNavigate}
+        />
+      )}
+      {step === 'checkout' && !publishAsCreator && (
         <CheckoutOverlay
           product={product}
           design={design}
@@ -917,22 +946,7 @@ function CheckoutOverlay({
 
   const handleAddToCart = async () => {
     if (!rightsChecked || totalQty === 0) return;
-    const designData: DesignData = {
-      color: design.color,
-      images: design.images,
-      originalImages: design.originalImages,
-      bgRemoved: design.bgRemoved,
-      text1: design.text1,
-      text2: design.text2,
-      sticker: design.sticker,
-      background: design.background,
-      imageTransforms: design.imageTransforms,
-      imageOrder: design.imageOrder,
-      text1Transform: design.text1Transform,
-      text2Transform: design.text2Transform,
-      stickerTransform: design.stickerTransform,
-      materialType,
-    };
+    const designData = toDesignData(design, materialType);
     if (isEditing && editItemId) {
       await updateItemDesign(editItemId, design.color, designData);
     } else {
