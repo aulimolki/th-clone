@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   LayoutDashboard, Package, Plus, Store, Settings, Wallet,
   TrendingUp, ArrowLeft, Loader2, ExternalLink, Eye,
-  Trash2,
+  Trash2, Copy, Check,
 } from 'lucide-react';
 import { useAuth } from '../auth';
 import { supabase, type Creator, type Product } from '../supabase';
@@ -121,6 +121,7 @@ export default function CreatorDashboardPage({
           >
             <ExternalLink size={14} /> View Store
           </button>
+          <CopyStoreLink slug={creator.slug} />
         </div>
       </div>
 
@@ -441,7 +442,7 @@ function StoreSettingsTab({ creator, onUpdated }: { creator: Creator; onUpdated:
           disabled={saving}
           className="px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center gap-2"
         >
-          {saving ? <Loader2 size={16} className="animate-spin" /> : saved ? <Check size={16} /> : null}
+          {saving ? <Loader2 size={16} className="animate-spin" /> : saved ? <CheckIcon size={16} /> : null}
           {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
         </button>
       </div>
@@ -449,10 +450,42 @@ function StoreSettingsTab({ creator, onUpdated }: { creator: Creator; onUpdated:
   );
 }
 
-function Check({ size }: { size: number }) {
+function CheckIcon({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
     </svg>
+  );
+}
+
+function CopyStoreLink({ slug }: { slug: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const url = `${window.location.origin}${window.location.pathname}#/store/${slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const input = document.createElement('input');
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+    >
+      {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+      {copied ? 'Link copied' : 'Copy Link'}
+    </button>
   );
 }

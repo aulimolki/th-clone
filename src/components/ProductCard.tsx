@@ -18,7 +18,15 @@ export default function ProductCard({ product, onNavigate }: Props) {
     e.stopPropagation();
     if (!product.sizes || product.sizes.length === 0) return;
     setAdding(true);
-    await addToCart(product, product.sizes.find((s) => s === 'M') ?? product.sizes[0]);
+    await addToCart(
+      product,
+      product.sizes.find((s) => s === 'M') ?? product.sizes[0],
+      1,
+      'DTG',
+      product.color ?? undefined,
+      product.design_data ?? undefined,
+      product.design_data?.materialType,
+    );
     setAdding(false);
   };
 

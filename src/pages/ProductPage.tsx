@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Star, Truck, RefreshCw, Globe, ChevronRight, Sparkles, Pencil, CheckCircle2, ThumbsUp, ThumbsDown, Play, ChevronDown } from 'lucide-react';
+import { Star, Truck, RefreshCw, Globe, ChevronRight, Sparkles, Pencil, CheckCircle2, ThumbsUp, ThumbsDown, Play, ChevronDown, ShoppingBag, Check, Minus, Plus, Store } from 'lucide-react';
 import { supabase, type Product, type PrintType, type MaterialType } from '../supabase';
+import { useCart } from '../cart';
 import ProductCard from '../components/ProductCard';
 import { formatIdr } from '../currency';
 
@@ -35,6 +36,7 @@ const MATERIAL_OPTIONS: { value: MaterialType; name: string; spec: string; descr
 ];
 
 export default function ProductPage({ slug, onNavigate }: Props) {
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,24 +44,43 @@ export default function ProductPage({ slug, onNavigate }: Props) {
   const [printType, setPrintType] = useState<PrintType>('DTG');
   const [materialType, setMaterialType] = useState<MaterialType>('Premium Heavyweight');
   const [color, setColor] = useState('White');
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [creatorName, setCreatorName] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       setActiveImage(0);
       setColor('White');
+      setSelectedSize(null);
+      setQuantity(1);
+      setAdded(false);
+      setCreatorName(null);
       const { data } = await supabase
         .from('products')
         .select('*, category:categories(*)')
         .eq('slug', slug)
         .maybeSingle();
       if (data) {
-        setProduct(data as unknown as Product);
+        const p = data as unknown as Product;
+        setProduct(p);
+        if (p.sizes?.length) setSelectedSize(p.sizes[0]);
+        if (p.creator_id) {
+          const { data: creatorRow } = await supabase
+            .from('creators')
+            .select('name, slug')
+            .eq('id', p.creator_id)
+            .maybeSingle();
+          if (creatorRow) setCreatorName(creatorRow.name);
+        }
         const { data: rel } = await supabase
           .from('products')
           .select('*, category:categories(*)')
-          .eq('category_id', (data as unknown as Product).category_id)
-          .neq('id', (data as unknown as Product).id)
+          .eq('category_id', p.category_id)
+          .neq('id', p.id)
           .limit(4);
         setRelated((rel as unknown as Product[]) ?? []);
       }
@@ -68,8 +89,27 @@ export default function ProductPage({ slug, onNavigate }: Props) {
     })();
   }, [slug]);
 
+  const isCreatorProduct = Boolean(product?.creator_id && product?.design_data);
+
   const handleCustomize = () => {
     onNavigate(`#/customize/${slug}?material=${encodeURIComponent(materialType)}`);
+  };
+
+  const handleAddToCart = async () => {
+    if (!product || !selectedSize) return;
+    setAdding(true);
+    await addToCart(
+      product,
+      selectedSize,
+      quantity,
+      printType,
+      product.color ?? product.design_data?.color ?? undefined,
+      product.design_data ?? undefined,
+      product.design_data?.materialType ?? materialType,
+    );
+    setAdding(false);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2500);
   };
 
   if (loading) {
@@ -167,65 +207,141 @@ export default function ProductPage({ slug, onNavigate }: Props) {
 
             <p className="text-gray-600 leading-relaxed mb-6">{product.description}</p>
 
-            {/* Material type selector */}
-            <div className="mb-6">
-              <span className="text-sm font-bold uppercase tracking-wide mb-2 block">Material Type</span>
-              <div className="grid grid-cols-2 gap-2">
-                {MATERIAL_OPTIONS.map((m) => (
+            {/* Creator product: size + quantity + add to cart */}
+            {isCreatorProduct ? (
+              <>
+                {creatorName && (
+                  <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
+                    <Store size={16} />
+                    <span>Designed by <strong className="text-gray-900">{creatorName}</strong></span>
+                  </div>
+                )}
+
+                {/* Size selector */}
+                <div className="mb-6">
+                  <span className="text-sm font-bold uppercase tracking-wide mb-3 block">Size — <span className="font-normal normal-case">{selectedSize}</span></span>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSelectedSize(s)}
+                        className={`min-w-[3rem] px-3 py-2.5 text-sm font-medium border transition-all ${selectedSize === s ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-gray-400'}`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quantity selector */}
+                <div className="mb-6">
+                  <span className="text-sm font-bold uppercase tracking-wide mb-3 block">Quantity</span>
+                  <div className="inline-flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      className="px-3 py-2.5 hover:bg-gray-100 transition-colors"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="px-5 py-2.5 text-sm font-semibold tabular-nums min-w-[3rem] text-center">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                      className="px-3 py-2.5 hover:bg-gray-100 transition-colors"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Add to cart */}
+                <button
+                  onClick={handleAddToCart}
+                  disabled={adding || !selectedSize}
+                  className="w-full py-4 text-sm font-bold uppercase tracking-wide bg-black text-white hover:bg-gray-800 disabled:opacity-60 transition-colors flex items-center justify-center gap-2 mb-3"
+                >
+                  {added ? (
+                    <><Check size={18} /> Added to Cart</>
+                  ) : adding ? (
+                    <>Adding...</>
+                  ) : (
+                    <><ShoppingBag size={18} /> Add to Cart — {formatIdr(product.price * quantity)}</>
+                  )}
+                </button>
+
+                {added && (
                   <button
-                    key={m.value}
-                    onClick={() => setMaterialType(m.value)}
-                    className={`py-3 text-sm font-medium border transition-all ${materialType === m.value ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'}`}
+                    onClick={() => onNavigate('#/checkout')}
+                    className="w-full py-3 text-sm font-semibold border border-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 mb-3"
                   >
-                    <div className="font-bold">{m.name}</div>
-                    <div className="text-[10px] font-normal opacity-80 mt-0.5">{m.spec}</div>
+                    Proceed to Checkout <ChevronRight size={16} />
                   </button>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                {MATERIAL_OPTIONS.find((m) => m.value === materialType)?.description}
-              </p>
-            </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Material type selector */}
+                <div className="mb-6">
+                  <span className="text-sm font-bold uppercase tracking-wide mb-2 block">Material Type</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {MATERIAL_OPTIONS.map((m) => (
+                      <button
+                        key={m.value}
+                        onClick={() => setMaterialType(m.value)}
+                        className={`py-3 text-sm font-medium border transition-all ${materialType === m.value ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'}`}
+                      >
+                        <div className="font-bold">{m.name}</div>
+                        <div className="text-[10px] font-normal opacity-80 mt-0.5">{m.spec}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {MATERIAL_OPTIONS.find((m) => m.value === materialType)?.description}
+                  </p>
+                </div>
 
-            {/* Print type selector */}
-            <div className="mb-6">
-              <span className="text-sm font-bold uppercase tracking-wide mb-2 block">Print Type</span>
-              <div className="grid grid-cols-2 gap-2">
-                {(['DTG', 'DTF'] as PrintType[]).map((pt) => (
-                  <button
-                    key={pt}
-                    onClick={() => setPrintType(pt)}
-                    className={`py-3 text-sm font-medium border transition-all ${printType === pt ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'}`}
-                  >
-                    <div className="font-bold">{pt}</div>
-                    <div className="text-[10px] font-normal opacity-80 mt-0.5">{pt === 'DTG' ? 'Direct-to-Garment' : 'Direct-to-Film'}</div>
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                {printType === 'DTG' ? 'DTG prints water-based ink directly into the fabric for a soft, breathable feel.' : 'DTF uses a printed film transferred with heat for vibrant colors and works on any fabric.'}
-              </p>
-            </div>
+                {/* Print type selector */}
+                <div className="mb-6">
+                  <span className="text-sm font-bold uppercase tracking-wide mb-2 block">Print Type</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['DTG', 'DTF'] as PrintType[]).map((pt) => (
+                      <button
+                        key={pt}
+                        onClick={() => setPrintType(pt)}
+                        className={`py-3 text-sm font-medium border transition-all ${printType === pt ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'}`}
+                      >
+                        <div className="font-bold">{pt}</div>
+                        <div className="text-[10px] font-normal opacity-80 mt-0.5">{pt === 'DTG' ? 'Direct-to-Garment' : 'Direct-to-Film'}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {printType === 'DTG' ? 'DTG prints water-based ink directly into the fabric for a soft, breathable feel.' : 'DTF uses a printed film transferred with heat for vibrant colors and works on any fabric.'}
+                  </p>
+                </div>
 
-            {/* Color selector */}
-            <div className="mb-6">
-              <span className="text-sm font-bold uppercase tracking-wide mb-3 block">Color — <span className="font-normal normal-case">{color}</span></span>
-              <div className="flex flex-wrap gap-3">
-                {TEE_COLORS.map((c) => (
-                  <button
-                    key={c.name}
-                    onClick={() => setColor(c.name)}
-                    title={c.name}
-                    className={`w-10 h-10 rounded-full border-2 transition-all ${color === c.name ? 'border-black ring-2 ring-black ring-offset-2' : 'border-gray-200 hover:border-gray-400'}`}
-                    style={{ backgroundColor: c.hex }}
-                  />
-                ))}
-              </div>
-            </div>
+                {/* Color selector */}
+                <div className="mb-6">
+                  <span className="text-sm font-bold uppercase tracking-wide mb-3 block">Color — <span className="font-normal normal-case">{color}</span></span>
+                  <div className="flex flex-wrap gap-3">
+                    {TEE_COLORS.map((c) => (
+                      <button
+                        key={c.name}
+                        onClick={() => setColor(c.name)}
+                        title={c.name}
+                        className={`w-10 h-10 rounded-full border-2 transition-all ${color === c.name ? 'border-black ring-2 ring-black ring-offset-2' : 'border-gray-200 hover:border-gray-400'}`}
+                        style={{ backgroundColor: c.hex }}
+                      />
+                    ))}
+                  </div>
+                </div>
 
-            <button onClick={handleCustomize} className="w-full py-4 text-sm font-bold uppercase tracking-wide bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-3">
-              <Sparkles size={18} /> Customize Now
-            </button>
+                <button onClick={handleCustomize} className="w-full py-4 text-sm font-bold uppercase tracking-wide bg-black text-white hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-3">
+                  <Sparkles size={18} /> Customize Now
+                </button>
+              </>
+            )}
 
             {/* Features */}
             <div className="mt-8 space-y-3 border-t border-gray-100 pt-6">
@@ -243,7 +359,7 @@ export default function ProductPage({ slug, onNavigate }: Props) {
               <details className="border-b border-gray-100 pb-3" open>
                 <summary className="text-sm font-bold uppercase tracking-wide cursor-pointer py-2">Product Details</summary>
                 <ul className="text-sm text-gray-600 space-y-1 mt-2 ml-1">
-                  <li>Designed by Cool Clothing Company</li>
+                  <li>{creatorName ? `Designed by ${creatorName}` : 'Designed by Cool Clothing Company'}</li>
                   <li>100% combed cotton</li>
                   <li>Heavyweight 275gsm fabric</li>
                   <li>90s-inspired boxy fit with dropped shoulders</li>
